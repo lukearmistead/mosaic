@@ -3,11 +3,11 @@ import fitbit
 import inspect
 import pandas as pd
 import plaid
-import yaml
-from utils.python_fitbit.gather_keys_oauth2 import OAuth2Server
+from python_fitbit.gather_keys_oauth2 import OAuth2Server
+from utils import yaml_lookup
 
 '''
-FUTURE
+- Add logging
 - Assign ids to data
 - Make OAuth2Server connection for Fitbit a touch more elegant
 - Config for Fitbit API endpoints
@@ -29,16 +29,6 @@ RESOURCES = [
         'activities/heart'
         ]
 OUTPUT_DIR_PATH='../data/fitbit/'
-
-
-def get_creds(path, key) -> dict:
-    """"
-    Returns a dictionary containing the credentials relevant for a particular
-    API, generally including a  client id and secret
-    """
-    with open(path, 'r') as stream:
-        creds = yaml.safe_load(stream)[key]
-    return creds
 
 
 def get_client(creds) -> object:
@@ -65,7 +55,7 @@ def main(
     output_dir_path=OUTPUT_DIR_PATH
     ):
 
-    creds = get_creds(creds_path, creds_key)
+    creds = yaml_lookup(creds_path, creds_key)
     client = get_client(creds)
     dfs = []
     for resource in resources:
