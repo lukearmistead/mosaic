@@ -1,0 +1,8 @@
+cherrypy
+fitbit
+numpy
+pandas
+plaid
+requests-oauthlib==1.1.0 
+oauthlib==2.1.0
+yaml

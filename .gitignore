@@ -1,0 +1,10 @@
+_site
+.sass-cache
+.jekyll-metadata
+*.swp
+.DS_store
+.ipynb*
+creds.yml
+*.csv
+*.feather
+data/*
