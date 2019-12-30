@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import fitbit
-import inspect
 import pandas as pd
-import plaid
 from python_fitbit.gather_keys_oauth2 import OAuth2Server
 from utils import yaml_lookup
 

@@ -7,5 +7,5 @@ def yaml_lookup(path, key) -> dict:
     API, generally including a  client id and secret
     """
     with open(path, 'r') as stream:
-        creds = yaml.safe_load(stream)[key]
-    return creds
+        value = yaml.safe_load(stream)[key]
+    return value
