@@ -3,8 +3,11 @@ _site
 .jekyll-metadata
 *.swp
 .DS_store
-.ipynb*
-creds.yml
+*.pyc*
+*.ipynb*
+arete/creds.yml
 *.csv
 *.feather
 data/*
+.idea/*
+notebooks/*

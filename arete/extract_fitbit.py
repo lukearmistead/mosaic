@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import fitbit
 import pandas as pd
+import numpy as np
 from python_fitbit.gather_keys_oauth2 import OAuth2Server
 from utils import yaml_lookup
 
@@ -15,7 +16,7 @@ from utils import yaml_lookup
 '''
 
 CREDS_KEY = 'fitbit'
-CREDS_PATH = '../creds.yml'
+CREDS_PATH = 'creds.yml'
 END_DATE = datetime.now().date()
 START_DATE = END_DATE - timedelta(days=100) # Fitbit doesn't like if we request more than 100 days. Meh. Fine.
 RESOURCES = [
@@ -26,6 +27,12 @@ RESOURCES = [
         'sleep',
         'activities/heart'
         ]
+KEYS = ['activities-distance',
+        'body-weight',
+        'body-fat',
+        'body-bmi',
+        'sleep',
+        'activities-heart']
 OUTPUT_DIR_PATH='../data/fitbit/'
 
 
@@ -43,6 +50,13 @@ def get_client(creds) -> object:
     client = fitbit.Fitbit(**creds)
     return client
 
+def unload_simple_json(data, d=None):
+    if not d:
+        d = {'dateTime': [], 'value': []}
+    for entry in data:
+        for k in d.keys():
+            d[k].append(entry[k])
+    return d
 
 def main(
     creds_path=CREDS_PATH,
@@ -50,18 +64,47 @@ def main(
     start_date=START_DATE,
     end_date=END_DATE,
     resources=RESOURCES,
+    keys=KEYS,
     output_dir_path=OUTPUT_DIR_PATH
     ):
 
     creds = yaml_lookup(creds_path, creds_key)
     client = get_client(creds)
     dfs = []
-    for resource in resources:
-        df = client.time_series(
+    for resource, key in zip(resources, keys):
+        if resource=='sleep':
+            d = {'efficiency': [], 'minutesAsleep': [], 'startTime': [], 'endTime': [], 'awakeningsCount': [],
+                 'dateOfSleep': []}
+        else:
+            d=None
+
+        df = unload_simple_json(client.time_series(
             resource, 
             base_date=start_date, 
             end_date=end_date
-            )
+            )[key], d)
+        if resource == 'activities/heart':
+            d = {
+                'Fat Burn': [],
+                'Cardio': [],
+                'Peak': [],
+                'dateTime': [],
+                'restingHeartRate': []
+            }
+
+            d['dateTime'] = df['dateTime']
+            for value in df['value']:
+                try:
+                    d['restingHeartRate'].append(value['restingHeartRate'])
+                except:
+                    d['restingHeartRate'].append(np.nan)
+
+                # Flattening embedded list
+                for k in d.keys():
+                    for zone in value['heartRateZones']:
+                        if zone['name'] == k:
+                            d[k].append(zone['minutes'])
+            df = d
         df = pd.DataFrame(df)
         if output_dir_path:
             name = resource.split('/')

@@ -8,7 +8,7 @@ from utils import yaml_lookup
 log.getLogger().setLevel(log.INFO)
 CREDS_KEY = 'plaid'
 ACCESS_TOKEN_KEY = 'plaid_account'
-CREDS_PATH = '../creds.yml'
+CREDS_PATH = 'creds.yml'
 END_DATE = datetime.now().date()
 START_DATE = END_DATE - timedelta(days=365)
 ACCOUNTS = ['aspiration', 'barclays', 'chase']
