@@ -1,5 +1,6 @@
 cherrypy
 fitbit
+matplotlib
 numpy
 pandas
 plaid-python
