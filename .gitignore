@@ -5,7 +5,7 @@ _site
 .DS_store
 *.pyc*
 *.ipynb*
-arete/creds.yml
+creds.yml
 *.csv
 *.feather
 data/*

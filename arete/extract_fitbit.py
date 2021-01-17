@@ -16,7 +16,7 @@ from utils import yaml_lookup
 '''
 
 CREDS_KEY = 'fitbit'
-CREDS_PATH = 'creds.yml'
+CREDS_PATH = '../creds.yml'
 END_DATE = datetime.now().date()
 START_DATE = END_DATE - timedelta(days=100) # Fitbit doesn't like if we request more than 100 days. Meh. Fine.
 RESOURCES = [

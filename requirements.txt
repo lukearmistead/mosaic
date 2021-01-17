@@ -3,6 +3,8 @@ fitbit
 numpy
 pandas
 plaid-python
+streamlit
+altair
 requests-oauthlib==1.1.0 
 oauthlib==2.1.0
 pyaml
