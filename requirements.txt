@@ -1,11 +1,12 @@
+altair
 cherrypy
 fitbit
 matplotlib
 numpy
 pandas
 plaid-python
-streamlit
-altair
-requests-oauthlib==1.1.0 
-oauthlib==2.1.0
 pyaml
+oauthlib==2.1.0
+requests-oauthlib==1.1.0
+stravalib
+streamlit
