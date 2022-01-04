@@ -11,3 +11,5 @@ creds.yml
 data/*
 .idea/*
 notebooks/*
+*debug*
+venv/*

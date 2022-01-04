@@ -9,4 +9,5 @@ pyaml
 oauthlib==2.1.0
 requests-oauthlib==1.1.0
 stravalib
+stravaio
 streamlit

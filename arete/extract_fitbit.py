@@ -89,13 +89,10 @@ def unload_fitbit_payload(raw_json_extract, resource, key):
                        'dateOfSleep': []}
     else:
         unpack_dict = None
-
     processed_json = unload_simple_json(raw_json_extract[key], unpack_dict)
     if resource == 'activities/heart':
         processed_json = unload_heart_rate_json(processed_json)
-
     df = pd.DataFrame(processed_json)
-
     return df
 
 
