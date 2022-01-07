@@ -22,7 +22,7 @@ class Creds:
         self.client_secret = creds["client_secret"]
         self.access_token = creds["access_token"]
         if not self.is_connected():
-            refresh_access_token()
+            self.refresh_access_token()
             update_yaml(creds_path, {creds_key: {"access_token": self.access_token}})
 
     def refresh_access_token(self):
