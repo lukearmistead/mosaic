@@ -4,6 +4,7 @@ fitbit
 matplotlib
 numpy
 pandas
+prettytable
 plaid-python
 pyaml
 oauthlib==2.1.0

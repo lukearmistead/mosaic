@@ -1,7 +1,9 @@
+from datetime import datetime
+import pprint
 import logging
 import pandas as pd
-from stravaio import strava_oauth2, StravaIO
-from utils import lookup_yaml, update_yaml
+from stravaio import StravaIO
+from utils import Creds
 
 
 logging.basicConfig(
@@ -13,30 +15,6 @@ CREDS_KEY = "strava"
 CREDS_PATH = "creds.yml"
 SEASON_STARTS_ON = "2021-10-01"
 DATA_OUTPUT_PATH = "data/strava/activities.csv"
-
-
-class Creds:
-    def __init__(self, creds_path, creds_key):
-        creds = lookup_yaml(creds_path)[creds_key]
-        self.client_id = creds["client_id"]
-        self.client_secret = creds["client_secret"]
-        self.access_token = creds["access_token"]
-        if not self.is_connected():
-            self.refresh_access_token()
-            update_yaml(creds_path, {creds_key: {"access_token": self.access_token}})
-
-    def refresh_access_token(self):
-        logging.info("Attempting to refresh access token through oauth2")
-        output = strava_oauth2(self.client_id, self.client_secret)
-        self.access_token = output["access_token"]
-
-    def is_connected(self):
-        client = StravaIO(self.access_token)
-        if client.get_logged_in_athlete():
-            return True
-        else:
-            logging.info("Access token failed to establish connection to Strava")
-            return False
 
 
 def extract_to_dataframe(raw_data) -> pd.DataFrame:

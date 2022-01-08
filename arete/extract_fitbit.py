@@ -3,8 +3,7 @@ from io import StringIO
 import logging
 import fitbit
 import pandas as pd
-from python_fitbit.gather_keys_oauth2 import OAuth2Server
-from utils import yaml_lookup
+from utils import Creds
 
 """
 - Create directories if they don't exist
@@ -22,11 +21,10 @@ logging.basicConfig(
 )
 
 CREDS_KEY = "fitbit"
-CREDS_PATH = "../creds.yml"
+CREDS_PATH = "creds.yml"
 END_DATE = datetime.now().date()
-START_DATE = END_DATE - timedelta(
-    days=100
-)  # Fitbit doesn't like if we request more than 100 days. Meh. Fine.
+# Fitbit doesn't like if we request more than 100 days. Meh. Fine.
+START_DATE = END_DATE - timedelta(days=100)
 RESOURCES = [
     "activities/distance",
     "body/weight",
@@ -43,25 +41,7 @@ KEYS = [
     "sleep",
     "activities-heart",
 ]
-OUTPUT_DIR_PATH = "../data/fitbit/"
-
-
-def get_client(creds) -> object:
-    """
-    Returns a client to access data from API. Assumes that the `creds`
-    dictionary keys map to the inputs of their respective client object.
-    """
-    logging.info("Establishing connection to FitBit API")
-
-    server = OAuth2Server(**creds)
-    server.browser_authorize()
-    keys = server.fitbit.client.session.token
-    for k in ["access_token", "refresh_token"]:
-        v = str(keys[k])
-        creds[k] = v
-    client = fitbit.Fitbit(**creds)
-    logging.info("Connection established!")
-    return client
+OUTPUT_DIR_PATH = "data/fitbit/"
 
 
 def unload_simple_json(data, d=None):
@@ -140,8 +120,14 @@ def main(
     keys=KEYS,
     output_dir_path=OUTPUT_DIR_PATH,
 ):
-    creds = yaml_lookup(creds_path, creds_key)
-    client = get_client(creds)
+    creds = Creds(creds_path, creds_key)
+    client = fitbit.Fitbit(
+        client_id=creds.client_id,
+        client_secret=creds.client_secret,
+        access_token=creds.access_token,
+        refresh_token=creds.refresh_token,
+        expires_at=creds.expires_at
+        )
     for resource, key in zip(resources, keys):
         raw_json_extract = client.time_series(
             resource, base_date=start_date, end_date=end_date
