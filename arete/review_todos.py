@@ -15,7 +15,7 @@ LOG_DIR = "/Users/luke.armistead/workspace/log/"
 TODO_FILE = "todo.txt"
 ARCHIVE_DIR = "review/"
 TODO_PATH = LOG_DIR + TODO_FILE
-ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + monday.strftime("%Y-%m-%d-") + TODO_FILE
+
 
 class Symbol(str, Enum):
     TASK = "-"
@@ -33,7 +33,10 @@ class ToDo:
     def parse_symbol(self, todo):
         symbol = todo.strip(" ")[0]
         assert (
-            symbol != Symbol.TASK
+            symbol
+            != Symbol.TASK
+            # TODO - This is just an attribute of the task and should be handled by the
+            # review function
         ), f"Found a {Symbol.TASK} symbol on {todo}. Make sure to migrate all todos!"
         return symbol
 
@@ -107,5 +110,8 @@ def main(todo_path, archive_todo_path):
     header = todo_header(monday)
     migrate_todos(todo_path, new_todos, header)
 
+
 if __name__ == "__main__":
+    monday = monday_this_week()
+    ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + monday.strftime("%Y-%m-%d-") + TODO_FILE
     main(TODO_PATH, ARCHIVE_TODO_PATH)

@@ -60,11 +60,13 @@ class Creds:
         self.expires_at = creds["expires_at"]
         if self.access_token_not_expired():
             self.refresh_tokens()
-            new_creds = {creds_key: {
-                "access_token": self.access_token,
-                "refresh_token": self.refresh_token,
-                "expires_at": self.expires_at
-                }}
+            new_creds = {
+                creds_key: {
+                    "access_token": self.access_token,
+                    "refresh_token": self.refresh_token,
+                    "expires_at": self.expires_at,
+                }
+            }
             update_yaml(creds_path, new_creds)
 
     def access_token_not_expired(self):
@@ -75,12 +77,15 @@ class Creds:
         if self.creds_key == "strava":
             output = strava_oauth2(self.client_id, self.client_secret)
         elif self.creds_key == "fitbit":
-            server = OAuth2Server(client_id=self.client_id, client_secret=self.client_secret)
+            server = OAuth2Server(
+                client_id=self.client_id, client_secret=self.client_secret
+            )
             server.browser_authorize()
             output = server.fitbit.client.session.token
         self.access_token = output["access_token"]
         self.refresh_token = output["refresh_token"]
         self.expires_at = output["expires_at"]
+
 
 if __name__ == "__main__":
     # Tests

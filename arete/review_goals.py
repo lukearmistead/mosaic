@@ -1,69 +1,99 @@
 import datetime
 import pandas as pd
 import prettytable
+import time
+
 
 strava_data_path = "data/strava/activities.csv"
-ski_activities = ["AlpineSki", "BackcountrySki"]
-weekly_ski_day_goal = 5
+SEASON_STARTS_ON = "2021-10-01"
 
 
-def monday_last_week():
+def weekday_int_from_string(day_of_week):
+    return time.strptime(day_of_week, "%A").tm_wday
+
+
+def date_from_string(date_as_string):
+    return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
+
+
+def last_week_date(day_of_week):
     today = datetime.date.today()
-    days_since_monday = today.weekday()  # Monday returns 0, Tuesday returns 1
-    monday = today - datetime.timedelta(days=days_since_monday + 7)
-    return monday
+    days_since_this_monday = today.weekday()  # Monday returns 0, Tuesday returns 1
+    days_since_last_day_of_week = (
+        days_since_this_monday + 7 - weekday_int_from_string(day_of_week)
+    )
+    date = today - datetime.timedelta(days=days_since_last_day_of_week)
+    return date
+
 
 def meters_to_feet(meter):
     return meter * 3.280839895
 
-class Strava:
-    def __init__(strava_data_path):
-        df = pd.read_csv(strava_data_path)
-        df = self.process(df)
 
-        self.ski = df['type'].isin(["AlpineSki", "BackcountrySki"])
-
-        ski_mask = self.df['type'].isin(["AlpineSki", "BackcountrySki"])
-
-    def process_df(self, df):
-        for date_col in ['start_date', 'start_date_local']:
-            df[date_col] = pd.to_datetime(df[date_col])
-        df['date'] = df['start_date_local'].dt.date
-
-        for measure in ['distance', 'total_elevation_gain']
-            for activity_type in df['type'].unique():
-                m = df['type'] == activity_type
-                avg = df.loc[m, measure].mean()
-                df.loc[m, measure]n= df.loc[m, measure].replace({0.0: avg})
-        return df
-
-    def get_total_ski_days(self):
-        total_ski_days = len(self.df.loc[ski_mask, 'date'].unique())
-
-
-
-def main():
+class Date:
+    # TODO
+    # Container for managing dates, including last Monday, Sunday, and season start
     pass
 
 
-if __name__ == '__main__':
-    strava = pd.read_csv(strava_data_path)
-    ski_mask = strava['type'].isin(ski_activities)
-    ski = strava.loc[ski_mask,]
-    ski['date'] = pd.to_datetime(ski['start_date_local']).dt.date
-    ski['total_elevation_gain'] = ski['total_elevation_gain'].fillna('mean') 
+class Ski:
+    def __init__(self, season_start_date, strava_data_path):
+        df = pd.read_csv(strava_data_path)
+        df = self.replace_nulls(df, "total_elevation_gain")
+        df = df.loc[
+            df["type"].isin(["AlpineSki", "BackcountrySki"]),
+        ]
+        last_monday = last_week_date("Monday")
+        last_sunday = last_week_date("Sunday")
+        season_start_date = date_from_string(season_start_date)
+        ski_dates = pd.to_datetime(df["start_date_local"]).dt.date
 
-    total_ski_days = len(ski['date'].unique())
-    total_ski_vert = meters_to_feet(ski['total_elevation_gain'].sum())
-    print('total_ski_days', total_ski_days)
-    print('total_ski_vert', total_ski_vert)
-    last_monday = monday_last_week()
-    print('last_monday', last_monday)
-    last_sunday = last_monday + datetime.timedelta(days=6)
-    print('last_sunday', last_sunday)
-    last_week_mask = ski['date'].between(last_monday, last_sunday)
-    last_week_ski_days = len(ski.loc[last_week_mask, 'date'].unique())
-    last_week_ski_vert = meters_to_feet(ski.loc[last_week_mask, 'total_elevation_gain'].sum())
-    print(ski.loc[last_week_mask, ['total_elevation_gain', 'date']])
-    print('last_week_ski_days', last_week_ski_days)
-    print('last_week_ski_vert', last_week_ski_vert)
+        # This week metrics
+        ski_season_filter = ski_dates.between(season_start_date, last_sunday)
+        self.date_count = self.count_ski_dates(df["start_date_local"])
+        self.vertical_feet = self.vertical_feet_sum(
+            ski_meters=df["total_elevation_gain"]
+        )
+
+        # Last week metrics
+        last_week_filter = ski_dates.between(last_monday, last_sunday)
+        self.last_week_date_count = self.count_ski_dates(
+            df.loc[last_week_filter, "start_date_local"]
+        )
+        self.last_week_vertical_feet = self.vertical_feet_sum(
+            ski_meters=df.loc[last_week_filter, "total_elevation_gain"]
+        )
+
+    def replace_nulls(self, df, measure):
+        for activity_type in df["type"].unique():
+            m = df["type"] == activity_type
+            avg = df.loc[m, measure].mean()
+            df.loc[m, measure] = df.loc[m, measure].replace({0.0: avg})
+        return df
+
+    def count_ski_dates(self, ski_dates):
+        ski_dates = pd.to_datetime(ski_dates).dt.date
+        ski_date_count = len(ski_dates.unique())
+        return ski_date_count
+
+    def vertical_feet_sum(self, ski_meters):
+        return meters_to_feet(ski_meters.sum())
+
+
+if __name__ == "__main__":
+    # Tests
+    ski = Ski(SEASON_STARTS_ON, strava_data_path)
+    print(
+        """GOALS
+               Week  Goal   Agg  Notes
+Ski Days:        {}    {}   {}  sum dates
+Ski Vert:        {}    {}   {}  season sum, 000s of feet
+""".format(
+            " " + str(ski.last_week_date_count),
+            " 3",
+            " " + str(ski.date_count),
+            round(ski.last_week_vertical_feet / 1000),
+            "30",
+            round(ski.vertical_feet / 1000),
+        )
+    )

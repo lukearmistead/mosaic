@@ -126,8 +126,8 @@ def main(
         client_secret=creds.client_secret,
         access_token=creds.access_token,
         refresh_token=creds.refresh_token,
-        expires_at=creds.expires_at
-        )
+        expires_at=creds.expires_at,
+    )
     for resource, key in zip(resources, keys):
         raw_json_extract = client.time_series(
             resource, base_date=start_date, end_date=end_date
