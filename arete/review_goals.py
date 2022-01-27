@@ -8,16 +8,13 @@ strava_data_path = "data/strava/activities.csv"
 SEASON_STARTS_ON = "2021-10-01"
 
 
-def meters_to_feet(meter):
-    return meter * 3.280839895
-
-
 class RelativeDate:
     # TODO
     # Container for managing dates, including last Monday, Sunday, and season start
-
     def __init__(self):
         self.today = datetime.date.today()
+        self.last_sunday = self.last_weekday_date("Sunday")
+        self.last_monday = self.last_weekday_date("Monday")
 
     def last_weekday_date(self, day_of_week):
         days_since_last_day_of_week = (self.days_since_last_monday() - self.weekday_number(day_of_week))
@@ -42,24 +39,30 @@ class Ski:
         df = df.loc[ski_filter,]
         ski_dates = pd.to_datetime(df["start_date_local"]).dt.date
         date = RelativeDate()
-        last_monday = date.last_weekday_date("Monday")
-        last_sunday = date.last_weekday_date("Sunday")
         season_start = date.date_from_string(season_start)
 
-        # This week metrics
-        ski_season_filter = ski_dates.between(season_start, last_sunday)
-        self.date_count = self.count_ski_dates(df["start_date_local"])
+        # Season metrics
+        season_filter = ski_dates.between(season_start, date.last_sunday)
+        self.date_count = self.count_ski_dates(
+            df.loc[season_filter, "start_date_local"]
+        )
         self.vertical_feet = self.vertical_feet_sum(
-            ski_meters=df["total_elevation_gain"]
+            ski_meters=df.loc[season_filter, "total_elevation_gain"]
+        )
+        self.max_speed = self.max_miles_per_hour(
+            meters_per_second=df.loc[season_filter, "max_speed"]
         )
 
         # Last week metrics
-        last_week_filter = ski_dates.between(last_monday, last_sunday)
+        last_week_filter = ski_dates.between(date.last_monday, date.last_sunday)
         self.last_week_date_count = self.count_ski_dates(
             df.loc[last_week_filter, "start_date_local"]
         )
         self.last_week_vertical_feet = self.vertical_feet_sum(
             ski_meters=df.loc[last_week_filter, "total_elevation_gain"]
+        )
+        self.last_week_max_speed = self.max_miles_per_hour(
+            meters_per_second=df.loc[last_week_filter, "max_speed"]
         )
 
     def replace_nulls(self, df, measure):
@@ -75,7 +78,10 @@ class Ski:
         return ski_date_count
 
     def vertical_feet_sum(self, ski_meters):
-        return meters_to_feet(ski_meters.sum())
+        return ski_meters.sum() * 3.280839895
+
+    def max_miles_per_hour(self, meters_per_second):
+        return meters_per_second.max() * 2.2369362921
 
 
 if __name__ == "__main__":
@@ -86,12 +92,18 @@ if __name__ == "__main__":
                Week  Goal   Agg  Notes
 Ski Days:        {}    {}   {}  sum dates
 Ski Vert:        {}    {}   {}  season sum, 000s of feet
+Ski Mph:         {}    {}    {}  season max
 """.format(
             " " + str(ski.last_week_date_count),
             " 3",
             " " + str(ski.date_count),
+
             round(ski.last_week_vertical_feet / 1000),
             "30",
             round(ski.vertical_feet / 1000),
+
+            round(ski.last_week_max_speed),
+            "50",
+            round(ski.max_speed)
         )
     )
