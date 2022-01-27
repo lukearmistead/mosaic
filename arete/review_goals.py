@@ -8,48 +8,46 @@ strava_data_path = "data/strava/activities.csv"
 SEASON_STARTS_ON = "2021-10-01"
 
 
-def weekday_int_from_string(day_of_week):
-    return time.strptime(day_of_week, "%A").tm_wday
-
-
-def date_from_string(date_as_string):
-    return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
-
-
-def last_week_date(day_of_week):
-    today = datetime.date.today()
-    days_since_this_monday = today.weekday()  # Monday returns 0, Tuesday returns 1
-    days_since_last_day_of_week = (
-        days_since_this_monday + 7 - weekday_int_from_string(day_of_week)
-    )
-    date = today - datetime.timedelta(days=days_since_last_day_of_week)
-    return date
-
-
 def meters_to_feet(meter):
     return meter * 3.280839895
 
 
-class Date:
+class RelativeDate:
     # TODO
     # Container for managing dates, including last Monday, Sunday, and season start
-    pass
+
+    def __init__(self):
+        self.today = datetime.date.today()
+
+    def last_weekday_date(self, day_of_week):
+        days_since_last_day_of_week = (self.days_since_last_monday() - self.weekday_number(day_of_week))
+        return self.today - datetime.timedelta(days=days_since_last_day_of_week)
+
+    def days_since_last_monday(self):
+        # `weekday` method returns 0 for mon, 1 for tue, etc.
+        return self.today.weekday() + 7
+
+    def weekday_number(self, day_of_week):
+        return time.strptime(day_of_week, "%A").tm_wday
+
+    def date_from_string(self, date_as_string):
+        return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
 
 
 class Ski:
-    def __init__(self, season_start_date, strava_data_path):
+    def __init__(self, season_start: str, strava_data_path: str):
         df = pd.read_csv(strava_data_path)
         df = self.replace_nulls(df, "total_elevation_gain")
-        df = df.loc[
-            df["type"].isin(["AlpineSki", "BackcountrySki"]),
-        ]
-        last_monday = last_week_date("Monday")
-        last_sunday = last_week_date("Sunday")
-        season_start_date = date_from_string(season_start_date)
+        ski_filter = df["type"].isin(["AlpineSki", "BackcountrySki"])
+        df = df.loc[ski_filter,]
         ski_dates = pd.to_datetime(df["start_date_local"]).dt.date
+        date = RelativeDate()
+        last_monday = date.last_weekday_date("Monday")
+        last_sunday = date.last_weekday_date("Sunday")
+        season_start = date.date_from_string(season_start)
 
         # This week metrics
-        ski_season_filter = ski_dates.between(season_start_date, last_sunday)
+        ski_season_filter = ski_dates.between(season_start, last_sunday)
         self.date_count = self.count_ski_dates(df["start_date_local"])
         self.vertical_feet = self.vertical_feet_sum(
             ski_meters=df["total_elevation_gain"]
