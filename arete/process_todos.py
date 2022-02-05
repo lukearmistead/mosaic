@@ -1,19 +1,14 @@
-import datetime
 from enum import Enum
 from pyfiglet import Figlet
 import os
+from utils import RelativeDate
 
-
-""" Anticipated Workflow
-- Current week notes and tasks go in home directory
-- Log of past weekly notes and tasks go in log directory with each week's review
-    - Should this be organized by week or month?
-- Long-standing reference materials go in reference directory
-"""
 
 LOG_DIR = "/Users/luke.armistead/workspace/log/"
 TODO_FILE = "todo.txt"
 ARCHIVE_DIR = "review/"
+DATE = RelativeDate()
+ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + DATE.last_monday_short + "-" + TODO_FILE
 TODO_PATH = LOG_DIR + TODO_FILE
 
 
@@ -37,7 +32,7 @@ class ToDo:
             != Symbol.TASK
             # TODO - This is just an attribute of the task and should be handled by the
             # review function
-        ), f"Found a {Symbol.TASK} symbol on {todo}. Make sure to migrate all todos!"
+        ), f"Found a '{Symbol.TASK}' symbol on '{todo}'. Make sure to migrate all todos!"
         return symbol
 
     def remove_initial_spaces(self, todo):
@@ -47,35 +42,26 @@ class ToDo:
         return todo[i:]
 
 
-def list_todos_to_migrate(path):
-    to_migrate = []
-    done_count = 0
-    drop_count = 0
-    with open(path, "r") as todo_list:
-        for todo in todo_list:
-            todo = ToDo(todo)
-            if todo.symbol == Symbol.MIGRATE:
-                to_migrate.append(todo)
-            elif todo.symbol == Symbol.DONE:
-                done_count += 1
-            elif todo.symbol == Symbol.DROP:
-                drop_count += 1
-        print(
-            (
-                f"Weekly tasks parsed\n"
-                f"Done:     {done_count}\n"
-                f"Migrated: {len(to_migrate)}\n"
-                f"Dropped:  {drop_count}\n"
-            )
-        )
-        return to_migrate
+class ToDos:
+    def __init__(self, path):
+        self.todo_list = open(path, "r")
+        self.done_count = 0
+        self.drop_count = 0
+        self.to_migrate = []
+        self.process_todos()
 
+    def process_todo(self, todo):
+        todo = ToDo(todo)
+        if todo.symbol == Symbol.MIGRATE:
+            self.to_migrate.append(todo)
+        elif todo.symbol == Symbol.DONE:
+            self.done_count += 1
+        elif todo.symbol == Symbol.DROP:
+            self.drop_count += 1
 
-def monday_this_week():
-    today = datetime.date.today()
-    days_since_monday = today.weekday()  # Monday returns 0, Tuesday returns 1
-    monday = today - datetime.timedelta(days=days_since_monday)
-    return monday
+    def process_todos(self):
+        for todo in self.todo_list:
+            self.process_todo(todo)
 
 
 def archive_todos(path, archive_path):
@@ -86,9 +72,8 @@ def archive_todos(path, archive_path):
     os.rename(path, archive_path)
 
 
-def todo_header(monday, title="ToDo", font="small"):
-    monday = monday.strftime("%B %d, %Y")
-    f = Figlet(font="small")
+def todo_header(monday: str, title="ToDo", font="small"):
+    f = Figlet(font=font)
     title = f.renderText(title)
     return title + monday
 
@@ -104,14 +89,12 @@ def migrate_todos(path, migrated_todos, header):
 
 
 def main(todo_path, archive_todo_path):
-    new_todos = list_todos_to_migrate(todo_path)
-    monday = monday_this_week()
+    todos = ToDos(todo_path)
     archive_todos(todo_path, archive_todo_path)
-    header = todo_header(monday)
-    migrate_todos(todo_path, new_todos, header)
+    date = RelativeDate()
+    header = todo_header(date.this_monday_short)
+    migrate_todos(todo_path, todos.to_migrate, header)
 
 
 if __name__ == "__main__":
-    monday = monday_this_week()
-    ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + monday.strftime("%Y-%m-%d-") + TODO_FILE
     main(TODO_PATH, ARCHIVE_TODO_PATH)

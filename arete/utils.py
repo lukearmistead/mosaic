@@ -1,9 +1,10 @@
 import collections.abc
-from datetime import datetime
+import datetime
 import logging
 from python_fitbit.gather_keys_oauth2 import OAuth2Server
 import os
 from stravaio import strava_oauth2
+import time
 import yaml
 
 
@@ -70,7 +71,7 @@ class Creds:
             update_yaml(creds_path, new_creds)
 
     def access_token_not_expired(self):
-        return datetime.today().timestamp() > self.expires_at
+        return datetime.datetime.today().timestamp() > self.expires_at
 
     def refresh_tokens(self):
         logging.info("Attempting to refresh access token through oauth2")
@@ -87,8 +88,45 @@ class Creds:
         self.expires_at = output["expires_at"]
 
 
+# TODO create date class with different intuitive representations 
+# short, long, weekday, etc
+class RelativeDate:
+    def __init__(self):
+        self.today = datetime.date.today()
+        self.this_monday = self.date_of_weekday("Monday", weeks_ago=0)
+        self.this_monday_short = self.short_date(self.this_monday)
+        self.last_sunday = self.date_of_weekday("Sunday", weeks_ago=1)
+        self.last_sunday_long = self.long_date(self.last_sunday)
+        self.last_monday = self.date_of_weekday("Monday", weeks_ago=1)
+        self.last_monday_short = self.short_date(self.last_monday)
+        self.last_monday_long = self.long_date(self.last_monday)
+
+    def date_of_weekday(self, day_of_week:str, weeks_ago:int):
+        days_since_last_day_of_week = self.days_since_this_monday() + weeks_ago * 7 - self.weekday_number(day_of_week)
+        return self.today - datetime.timedelta(days=days_since_last_day_of_week)
+
+    def days_since_this_monday(self):
+        # `weekday` method returns 0 for mon, 1 for tue, etc.
+        return self.today.weekday()
+
+    # TODO - Should these be broken out into seperate class?
+    def weekday_number(self, day_of_week):
+        return time.strptime(day_of_week, "%A").tm_wday
+
+    def date_from_string(self, date_as_string):
+        return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
+
+    def long_date(self, timestamp):
+        # Returns date as string like "January 4, 1989"
+        return timestamp.strftime("%B %d, %Y")
+
+    def short_date(self, timestamp):
+        # Returns date as string like "1989-01-04"
+        return timestamp.strftime("%Y-%m-%d")
+
+
 if __name__ == "__main__":
-    # Tests
+    # YAML tests
     path, key = "test.yml", {"foo": {"bar": "asdf"}}
     write_yaml(path, key)
     print(lookup_yaml(path))
@@ -96,3 +134,11 @@ if __name__ == "__main__":
     update_yaml(path, update)
     print(lookup_yaml(path))
     os.remove(path)
+
+    # Date tests
+    relative_date = RelativeDate()
+    print("This Monday      : ", relative_date.this_monday)
+    print("Last Monday      : ", relative_date.last_monday)
+    print("Last Monday Short: ", relative_date.last_monday_short)
+    print("Last Monday Long : ", relative_date.last_monday_long)
+    print("Last Sunday      : ", relative_date.last_sunday)
