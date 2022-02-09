@@ -110,17 +110,22 @@ class RelativeDate:
         return self.today.weekday()
 
     # TODO - Should these be broken out into seperate class?
-    def weekday_number(self, day_of_week):
+    @staticmethod
+    def weekday_number(day_of_week:str):
         return time.strptime(day_of_week, "%A").tm_wday
 
-    def date_from_string(self, date_as_string):
+    # TODO - This should probably be removed since it isn't used by the class
+    @staticmethod
+    def date_from_string(date_as_string:str):
         return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
 
-    def long_date(self, timestamp):
+    @staticmethod
+    def long_date(timestamp):
         # Returns date as string like "January 4, 1989"
         return timestamp.strftime("%B %d, %Y")
 
-    def short_date(self, timestamp):
+    @staticmethod
+    def short_date(timestamp):
         # Returns date as string like "1989-01-04"
         return timestamp.strftime("%Y-%m-%d")
 

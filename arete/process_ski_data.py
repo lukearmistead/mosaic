@@ -52,17 +52,17 @@ class Ski:
         ski_date_count = len(ski_dates.unique())
         return ski_date_count
 
-    @classmethod
-    def date_vector(self, mistyped_timestamp_vector):
+    @staticmethod
+    def date_vector(mistyped_timestamp_vector):
         return pd.to_datetime(mistyped_timestamp_vector).dt.date
 
 
-    @classmethod
-    def vertical_feet_sum(self, ski_meters):
+    @staticmethod
+    def vertical_feet_sum(ski_meters):
         return ski_meters.sum() * 3.280839895
 
-    @classmethod
-    def max_miles_per_hour(self, meters_per_second):
+    @staticmethod
+    def max_miles_per_hour(meters_per_second):
         return meters_per_second.max() * 2.2369362921
 
 
