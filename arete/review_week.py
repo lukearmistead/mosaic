@@ -3,54 +3,31 @@ import os
 import pandas as pd
 from prettytable import PrettyTable
 from process_ski_data import Ski
-from process_todos import ToDos
+from process_todos import ToDos, migrate_todos
 from utils import RelativeDate
 
-strava_data_path = "data/strava/activities.csv"
+STRAVA_DATA_PATH = "data/strava/activities.csv"
 SEASON_STARTS_ON = "2021-10-01"
-LOG_DIR = "/Users/luke.armistead/workspace/log/"
-TODO_FILE = "todo.txt"
-ARCHIVE_DIR = "review/"
-DATE = RelativeDate()
-ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + DATE.last_monday_short + "-" + TODO_FILE
-TODO_PATH = LOG_DIR + TODO_FILE
-
-
-def archive_todos(path, archive_path):
-    assert not os.path.exists(
-        archive_path
-    ), f"Discontinuing weekly refresh because file already exists at target path {archive_path}"
-    print(f"Archiving weekly todo list from {path} to {archive_path}")
-    os.rename(path, archive_path)
-
-
-def migrate_todos(path, migrated_todos, header):
-    with open(path, "w+") as todos:
-        todos.write(header + "\n\n")
-        for todo in migrated_todos:
-            todo = todo.raw.replace(Symbol.MIGRATE, Symbol.TASK, 1)
-            todos.write(todo)
-    todos.close()
-    print(f"Created new todo file with migrated todos at {path}")
+TODO_PATH = "/Users/luke.armistead/workspace/log/todo.txt"
 
 
 class Review:
-    def __init__(self, strava_data_path, todo_path, season_starts_on):
-        self.head = self.header(title="Review")
-        self.table = self.build_table()
-        df = pd.read_csv(strava_data_path)
-        self.skis = Ski(season_starts_on, df)
-        self.todos = ToDos(todo_path)
+    # TODO - Input strava and todo objects, not paths
+    def __init__(self, skis, todos):
+        self.header = self.create_header(title="Review")
+        self.table = self.create_table()
+        self.skis = skis
+        self.todos = todos
         self.populate_table()
-        print(self.table)
+        self.text = self.create_review_text()
 
-    def header(self, title, font="small"):
+    def create_header(self, title, font="small"):
         f = Figlet(font=font)
         title = f.renderText(title)
         date = RelativeDate()
         return title + date.last_monday_long
 
-    def build_table(self):
+    def create_table(self):
         table = PrettyTable()
         table.field_names = ["Field", "Week", "Goal", "Agg"]
         table.align["Field"] = "l"
@@ -69,9 +46,31 @@ class Review:
         for row in rows:
             self.table.add_row(row)
 
+    def create_review_text(self):
+        list_text = [self.header, "\nGOALS", self.table.get_string(), "\nTASKS", "".join(self.todos.list)]
+        return "\n".join(list_text)
+
+
+class ReviewFile:
+    def __init__(self, review):
+        self.review = review
+        self.dir = "/Users/luke.armistead/workspace/log/review/"
+        date = RelativeDate()
+        self.file = date.last_monday_short + "-review.txt"
+        self.path = self.dir + self.file
+
+    def write(self):
+        with open(self.path, "w+") as file:
+            file.write(self.review.text)
+        file.close()
+
 
 if __name__ == "__main__":
-    review = Review(strava_data_path, TODO_PATH, SEASON_STARTS_ON)
-    print(review.head)
-    print(review.table)
-
+    df = pd.read_csv(STRAVA_DATA_PATH)
+    skis = Ski(SEASON_STARTS_ON, df)
+    todos = ToDos(TODO_PATH)
+    review = Review(skis, todos)
+    review_file = ReviewFile(review)
+    review_file.write()
+    head = Figlet(font="small")
+    migrate_todos(TODO_PATH, todos.to_migrate, head.renderText("ToDo"))

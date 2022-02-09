@@ -2,6 +2,8 @@ A tool supporting data-driven reflection. Arete pulls data from a variety of sou
 
 
 Road map:
+- Add logging to explain completed tasks like writing files
+- Is there an elegant way to deal with the file creation, deletion, and shuffle?
 - Creation and completion timestamps for todos
 - Command line interface to add, delete, list, and modify tasks
 - Add and view tasks from phone

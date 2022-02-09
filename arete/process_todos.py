@@ -47,54 +47,37 @@ class ToDos:
         self.todo_list = open(path, "r")
         self.done_count = 0
         self.drop_count = 0
+        self.list = []
         self.to_migrate = []
         self.process_todos()
 
     def process_todo(self, todo):
         todo = ToDo(todo)
         if todo.symbol == Symbol.MIGRATE:
-            self.to_migrate.append(todo)
+            self.to_migrate.append(todo.raw)
         elif todo.symbol == Symbol.DONE:
             self.done_count += 1
         elif todo.symbol == Symbol.DROP:
             self.drop_count += 1
+        else:
+            return
+        self.list.append(todo.name)
 
     def process_todos(self):
         for todo in self.todo_list:
             self.process_todo(todo)
 
 
-def archive_todos(path, archive_path):
-    assert not os.path.exists(
-        archive_path
-    ), f"Discontinuing weekly refresh because file already exists at target path {archive_path}"
-    print(f"Archiving weekly todo list from {path} to {archive_path}")
-    os.rename(path, archive_path)
-
-
-def todo_header(monday: str, title="ToDo", font="small"):
-    f = Figlet(font=font)
-    title = f.renderText(title)
-    return title + monday
-
-
 def migrate_todos(path, migrated_todos, header):
     with open(path, "w+") as todos:
         todos.write(header + "\n\n")
         for todo in migrated_todos:
-            todo = todo.raw.replace(Symbol.MIGRATE, Symbol.TASK, 1)
+            todo = todo.replace(Symbol.MIGRATE, Symbol.TASK, 1)
             todos.write(todo)
     todos.close()
     print(f"Created new todo file with migrated todos at {path}")
 
 
-def main(todo_path, archive_todo_path):
-    todos = ToDos(todo_path)
-    archive_todos(todo_path, archive_todo_path)
-    date = RelativeDate()
-    header = todo_header(date.this_monday_short)
-    migrate_todos(todo_path, todos.to_migrate, header)
-
-
 if __name__ == "__main__":
+    pass
     main(TODO_PATH, ARCHIVE_TODO_PATH)
