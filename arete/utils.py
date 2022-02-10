@@ -82,17 +82,17 @@ class Creds:
     def refresh_tokens(self):
         logging.info("Using refresh token to procure fresh access token")
         secret = str(self.client_id) + ":" + self.client_secret
-        header = {'Authorization': 'Basic ' + self.encode_secret(secret)}
+        header = {"Authorization": "Basic " + self.encode_secret(secret)}
         response = requests.post(
             url=self.endpoint,
             headers=header,
             data={
-                'client_id': self.client_id,
-                'client_secret': self.client_secret,
-                'refresh_token': self.refresh_token,
-                'grant_type': 'refresh_token',
-                }
-            )
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "refresh_token": self.refresh_token,
+                "grant_type": "refresh_token",
+            },
+        )
         return response.json()
 
     def refresh_expired_tokens_with_oauth2(self):
@@ -137,8 +137,12 @@ class RelativeDate:
         self.last_monday_short = self.short_date(self.last_monday)
         self.last_monday_long = self.long_date(self.last_monday)
 
-    def date_of_weekday(self, day_of_week:str, weeks_ago:int):
-        days_since_last_day_of_week = self.days_since_this_monday() + weeks_ago * 7 - self.weekday_number(day_of_week)
+    def date_of_weekday(self, day_of_week: str, weeks_ago: int):
+        days_since_last_day_of_week = (
+            self.days_since_this_monday()
+            + weeks_ago * 7
+            - self.weekday_number(day_of_week)
+        )
         return self.today - datetime.timedelta(days=days_since_last_day_of_week)
 
     def days_since_this_monday(self):
@@ -147,12 +151,12 @@ class RelativeDate:
 
     # TODO - Should these be broken out into seperate class?
     @staticmethod
-    def weekday_number(day_of_week:str):
+    def weekday_number(day_of_week: str):
         return time.strptime(day_of_week, "%A").tm_wday
 
     # TODO - This should probably be removed since it isn't used by the class
     @staticmethod
-    def date_from_string(date_as_string:str):
+    def date_from_string(date_as_string: str):
         return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
 
     @staticmethod
@@ -177,7 +181,7 @@ if __name__ == "__main__":
     os.remove(path)
 
     # Creds tests
-    print('CREDS TESTS')
+    print("CREDS TESTS")
     CREDS_KEY = "strava"
     CREDS_PATH = "creds.yml"
     creds = Creds(CREDS_PATH, CREDS_KEY)

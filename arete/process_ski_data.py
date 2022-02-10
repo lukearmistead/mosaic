@@ -10,8 +10,10 @@ SEASON_STARTS_ON = "2021-10-01"
 class Ski:
     def __init__(self, season_start: str, df: pd.DataFrame):
         df = self.replace_nulls_with_activity_mean(df, "total_elevation_gain")
-        ski_dates = self.date_vector(df['start_date_local'])
-        df = df.loc[df["type"].isin(["AlpineSki", "BackcountrySki"]),]
+        ski_dates = self.date_vector(df["start_date_local"])
+        df = df.loc[
+            df["type"].isin(["AlpineSki", "BackcountrySki"]),
+        ]
         date = RelativeDate()
 
         # Season metrics
@@ -56,7 +58,6 @@ class Ski:
     def date_vector(mistyped_timestamp_vector):
         return pd.to_datetime(mistyped_timestamp_vector).dt.date
 
-
     @staticmethod
     def vertical_feet_sum(ski_meters):
         return ski_meters.sum() * 3.280839895
@@ -78,9 +79,14 @@ if __name__ == "__main__":
     output.float_format = ".0"
     rows = [
         ["Ski Day Count", ski.last_week_date_count, "3", ski.date_count],
-        ["Ski Feet Sum (000s)", ski.last_week_vertical_feet / 1000, "30", ski.vertical_feet / 1000],
+        [
+            "Ski Feet Sum (000s)",
+            ski.last_week_vertical_feet / 1000,
+            "30",
+            ski.vertical_feet / 1000,
+        ],
         ["Ski Mph Max", ski.last_week_max_speed, "60", ski.max_speed],
-        ]
+    ]
     for row in rows:
         output.add_row(row)
     print(output)

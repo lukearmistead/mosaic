@@ -36,19 +36,35 @@ class Review:
             table.align[field] = "r"
         table.float_format = ".0"
         return table
-   
+
     def populate_table(self):
         rows = [
-            ["Ski Day Count", self.skis.last_week_date_count, "3", self.skis.date_count],
-            ["Ski Feet Sum (000s)", self.skis.last_week_vertical_feet / 1000, "30", self.skis.vertical_feet / 1000],
+            [
+                "Ski Day Count",
+                self.skis.last_week_date_count,
+                "3",
+                self.skis.date_count,
+            ],
+            [
+                "Ski Feet Sum (000s)",
+                self.skis.last_week_vertical_feet / 1000,
+                "30",
+                self.skis.vertical_feet / 1000,
+            ],
             ["Ski Mph Max", self.skis.last_week_max_speed, "60", self.skis.max_speed],
             ["Tasks Done", self.todos.done_count, "", ""],
-            ]
+        ]
         for row in rows:
             self.table.add_row(row)
 
     def create_review_text(self):
-        list_text = [self.header, "\nGOALS", self.table.get_string(), "\nTASKS", "".join(self.todos.list)]
+        list_text = [
+            self.header,
+            "\nGOALS",
+            self.table.get_string(),
+            "\nTASKS",
+            "".join(self.todos.list),
+        ]
         return "\n".join(list_text)
 
 
@@ -69,10 +85,10 @@ class ReviewFile:
 if __name__ == "__main__":
     extract_strava(
         extract_data_since=SEASON_STARTS_ON,
-        creds_path='creds.yml',
-        creds_key='strava',
+        creds_path="creds.yml",
+        creds_key="strava",
         data_output_path=STRAVA_DATA_PATH,
-        )
+    )
     df = pd.read_csv(STRAVA_DATA_PATH)
     skis = Ski(SEASON_STARTS_ON, df)
     todos = ToDos(TODO_PATH)
