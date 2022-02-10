@@ -22,7 +22,7 @@ def extract_to_dataframe(raw_data) -> pd.DataFrame:
     return pd.DataFrame(processed_data)
 
 
-def main(extract_data_since, creds_path, creds_key, data_output_path):
+def extract_strava(extract_data_since, creds_path, creds_key, data_output_path):
     creds = Creds(creds_path, creds_key)
     client = StravaIO(creds.access_token)
     raw_data = client.get_logged_in_athlete_activities(after=extract_data_since)
@@ -31,4 +31,4 @@ def main(extract_data_since, creds_path, creds_key, data_output_path):
 
 
 if __name__ == "__main__":
-    main(SEASON_STARTS_ON, CREDS_PATH, CREDS_KEY, DATA_OUTPUT_PATH)
+    extract_strava(SEASON_STARTS_ON, CREDS_PATH, CREDS_KEY, DATA_OUTPUT_PATH)

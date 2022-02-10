@@ -1,9 +1,10 @@
-from pyfiglet import Figlet
+from extract_strava import extract_strava
 import os
 import pandas as pd
 from prettytable import PrettyTable
 from process_ski_data import Ski
 from process_todos import ToDos, migrate_todos
+from pyfiglet import Figlet
 from utils import RelativeDate
 
 STRAVA_DATA_PATH = "data/strava/activities.csv"
@@ -66,6 +67,12 @@ class ReviewFile:
 
 
 if __name__ == "__main__":
+    extract_strava(
+        extract_data_since=SEASON_STARTS_ON,
+        creds_path='creds.yml',
+        creds_key='strava',
+        data_output_path=STRAVA_DATA_PATH,
+        )
     df = pd.read_csv(STRAVA_DATA_PATH)
     skis = Ski(SEASON_STARTS_ON, df)
     todos = ToDos(TODO_PATH)
