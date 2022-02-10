@@ -1,12 +1,14 @@
+import base64
 import collections.abc
 import datetime
+import json
 import logging
 from python_fitbit.gather_keys_oauth2 import OAuth2Server
 import os
+import requests
 from stravaio import strava_oauth2
 import time
 import yaml
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -59,8 +61,12 @@ class Creds:
         self.access_token = creds["access_token"]
         self.refresh_token = creds["refresh_token"]
         self.expires_at = creds["expires_at"]
-        if self.access_token_not_expired():
-            self.refresh_tokens()
+        self.endpoint = creds["endpoint"]
+        if self.access_token_expired():
+            response = self.refresh_tokens()
+            self.access_token = response["access_token"]
+            self.refresh_token = response["refresh_token"]
+            self.expires_at = time.time() + response["expires_in"]
             new_creds = {
                 creds_key: {
                     "access_token": self.access_token,
@@ -70,10 +76,27 @@ class Creds:
             }
             update_yaml(creds_path, new_creds)
 
-    def access_token_not_expired(self):
+    def access_token_expired(self):
         return datetime.datetime.today().timestamp() > self.expires_at
 
     def refresh_tokens(self):
+        logging.info("Using refresh token to procure fresh access token")
+        secret = str(self.client_id) + ":" + self.client_secret
+        header = {'Authorization': 'Basic ' + self.encode_secret(secret)}
+        response = requests.post(
+            url=self.endpoint,
+            headers=header,
+            data={
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'refresh_token': self.refresh_token,
+                'grant_type': 'refresh_token',
+                }
+            )
+        return response.json()
+
+    def refresh_expired_tokens_with_oauth2(self):
+        # TODO - Can this be generalized? Should this be removed if I never use it?
         logging.info("Attempting to refresh access token through oauth2")
         if self.creds_key == "strava":
             output = strava_oauth2(self.client_id, self.client_secret)
@@ -86,6 +109,19 @@ class Creds:
         self.access_token = output["access_token"]
         self.refresh_token = output["refresh_token"]
         self.expires_at = output["expires_at"]
+
+    @staticmethod
+    def encode_secret(secret):
+        """Standard protocol for passing bytes over a network to avoid misinterpretation of data
+        b64 explanation:
+        https://stackoverflow.com/questions/201479/what-is-base-64-encoding-used-for
+        Fibit request documentation:
+        https://dev.fitbit.com/build/reference/web-api/authorization/client-credentials/
+        """
+        bytes_secret = secret.encode()
+        encoded_bytes_secret = base64.b64encode(bytes_secret)
+        encoded_string_secret = encoded_bytes_secret.decode()
+        return encoded_string_secret
 
 
 # TODO create date class with different intuitive representations 
@@ -139,6 +175,15 @@ if __name__ == "__main__":
     update_yaml(path, update)
     print(lookup_yaml(path))
     os.remove(path)
+
+    # Creds tests
+    print('CREDS TESTS')
+    CREDS_KEY = "strava"
+    CREDS_PATH = "creds.yml"
+    creds = Creds(CREDS_PATH, CREDS_KEY)
+    CREDS_KEY = "fitbit"
+    CREDS_PATH = "creds.yml"
+    creds = Creds(CREDS_PATH, CREDS_KEY)
 
     # Date tests
     relative_date = RelativeDate()
