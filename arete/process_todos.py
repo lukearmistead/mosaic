@@ -8,7 +8,7 @@ LOG_DIR = "/Users/luke.armistead/workspace/log/"
 TODO_FILE = "todo.txt"
 ARCHIVE_DIR = "review/"
 DATE = RelativeDate()
-ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + DATE.last_monday_short + "-" + TODO_FILE
+ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + DATE.last_monday.short_date_format + "-" + TODO_FILE
 TODO_PATH = LOG_DIR + TODO_FILE
 
 

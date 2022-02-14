@@ -1,10 +1,11 @@
+import datetime
 import pandas as pd
 from prettytable import PrettyTable
 from utils import RelativeDate
 
 
 strava_data_path = "data/strava/activities.csv"
-SEASON_STARTS_ON = "2021-10-01"
+SEASON_STARTS_ON = datetime.date(2021, 10, 1)
 
 
 class Ski:
@@ -18,7 +19,6 @@ class Ski:
 
         # Season metrics
         # TODO - fix date processing for ski_dates creation
-        season_start = date.date_from_string(season_start)
         season_filter = ski_dates.between(season_start, date.last_sunday)
         self.date_count = self.count_ski_dates(
             df.loc[season_filter, "start_date_local"]

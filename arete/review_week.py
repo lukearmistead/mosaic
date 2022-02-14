@@ -1,3 +1,4 @@
+import datetime
 from extract_strava import extract_strava
 import os
 import pandas as pd
@@ -8,12 +9,13 @@ from pyfiglet import Figlet
 from utils import RelativeDate
 
 STRAVA_DATA_PATH = "data/strava/activities.csv"
+# TODO - Make handling of constants like these less sloppy
 SEASON_STARTS_ON = "2021-10-01"
+SEASON_STARTS_ON_DATETIME = datetime.date(2021, 10, 1)
 TODO_PATH = "/Users/luke.armistead/workspace/log/todo.txt"
 
 
 class Review:
-    # TODO - Input strava and todo objects, not paths
     def __init__(self, skis, todos):
         self.header = self.create_header(title="Review")
         self.table = self.create_table()
@@ -26,7 +28,7 @@ class Review:
         f = Figlet(font=font)
         title = f.renderText(title)
         date = RelativeDate()
-        return title + date.last_monday_long
+        return title + date.last_monday.long_date_format
 
     def create_table(self):
         table = PrettyTable()
@@ -73,7 +75,7 @@ class ReviewFile:
         self.review = review
         self.dir = "/Users/luke.armistead/workspace/log/review/"
         date = RelativeDate()
-        self.file = date.last_monday_short + "-review.txt"
+        self.file = date.last_monday.short_date_format + "-review.txt"
         self.path = self.dir + self.file
 
     def write(self):

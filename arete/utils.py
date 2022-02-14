@@ -54,6 +54,12 @@ def yaml_lookup(path: str, key: str) -> dict:
 
 class Creds:
     def __init__(self, creds_path, creds_key):
+        """ TODO
+        - What attributes actually need to be exposed for external use?
+        - If the `access_token` variable hangs around for days, it may not be fresh.
+          Write a function `get_access_token` which checks for freshness before providing access to the variable.
+        """
+        
         creds = lookup_yaml(creds_path)[creds_key]
         self.creds_key = creds_key
         self.client_id = creds["client_id"]
@@ -124,50 +130,45 @@ class Creds:
         return encoded_string_secret
 
 
-# TODO create date class with different intuitive representations 
-# short, long, weekday, etc
+# Class extends datetime.date to enable pretty printing
+# https://stackoverflow.com/a/11286173/4447670
+class FormattedDateTime(datetime.date):
+    @property
+    def long_date_format(self):
+        # Returns date as string like "January 4, 1989"
+        return self.strftime(format="%B %-d, %Y")
+
+    @property
+    def short_date_format(self):
+        # Returns date as string like "1989-01-04"
+        return self.strftime(format="%Y-%m-%d")
+
+
+datetime.date = FormattedDateTime
+
+
 class RelativeDate:
     def __init__(self):
-        self.today = datetime.date.today()
+        self.__today = datetime.date.today()
         self.this_monday = self.date_of_weekday("Monday", weeks_ago=0)
-        self.this_monday_short = self.short_date(self.this_monday)
         self.last_sunday = self.date_of_weekday("Sunday", weeks_ago=1)
-        self.last_sunday_long = self.long_date(self.last_sunday)
         self.last_monday = self.date_of_weekday("Monday", weeks_ago=1)
-        self.last_monday_short = self.short_date(self.last_monday)
-        self.last_monday_long = self.long_date(self.last_monday)
 
     def date_of_weekday(self, day_of_week: str, weeks_ago: int):
         days_since_last_day_of_week = (
             self.days_since_this_monday()
             + weeks_ago * 7
-            - self.weekday_number(day_of_week)
+            - self._weekday_number(day_of_week)
         )
-        return self.today - datetime.timedelta(days=days_since_last_day_of_week)
+        return self.__today - datetime.timedelta(days=days_since_last_day_of_week)
 
     def days_since_this_monday(self):
         # `weekday` method returns 0 for mon, 1 for tue, etc.
-        return self.today.weekday()
+        return self.__today.weekday()
 
-    # TODO - Should these be broken out into seperate class?
     @staticmethod
-    def weekday_number(day_of_week: str):
+    def _weekday_number(day_of_week: str):
         return time.strptime(day_of_week, "%A").tm_wday
-
-    # TODO - This should probably be removed since it isn't used by the class
-    @staticmethod
-    def date_from_string(date_as_string: str):
-        return datetime.datetime.strptime(date_as_string, "%Y-%m-%d").date()
-
-    @staticmethod
-    def long_date(timestamp):
-        # Returns date as string like "January 4, 1989"
-        return timestamp.strftime("%B %d, %Y")
-
-    @staticmethod
-    def short_date(timestamp):
-        # Returns date as string like "1989-01-04"
-        return timestamp.strftime("%Y-%m-%d")
 
 
 if __name__ == "__main__":
@@ -190,9 +191,9 @@ if __name__ == "__main__":
     creds = Creds(CREDS_PATH, CREDS_KEY)
 
     # Date tests
-    relative_date = RelativeDate()
-    print("This Monday      : ", relative_date.this_monday)
-    print("Last Monday      : ", relative_date.last_monday)
-    print("Last Monday Short: ", relative_date.last_monday_short)
-    print("Last Monday Long : ", relative_date.last_monday_long)
-    print("Last Sunday      : ", relative_date.last_sunday)
+    date = RelativeDate()
+    print("This Monday      : ", date.this_monday)
+    print("Last Monday      : ", date.last_monday)
+    print("Last Monday Short: ", date.last_monday.short_date_format)
+    print("Last Monday Long : ", date.last_monday.long_date_format)
+    print("Last Sunday      : ", date.last_sunday)
