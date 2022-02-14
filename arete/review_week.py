@@ -97,5 +97,7 @@ if __name__ == "__main__":
     review = Review(skis, todos)
     review_file = ReviewFile(review)
     review_file.write()
-    head = Figlet(font="small")
-    migrate_todos(TODO_PATH, todos.to_migrate, head.renderText("ToDo"))
+
+    # Set up new task list for the week 
+    header = Figlet(font="small")
+    migrate_todos(TODO_PATH, todos, header.renderText("ToDo"))
