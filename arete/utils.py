@@ -130,39 +130,28 @@ class Creds:
         return encoded_string_secret
 
 
-# Class extends datetime.date to enable pretty printing
-# https://stackoverflow.com/a/11286173/4447670
-class FormattedDateTime(datetime.date):
-    @property
-    def long_date_format(self):
-        # Returns date as string like "January 4, 1989"
-        return self.strftime(format="%B %-d, %Y")
-
-    @property
-    def short_date_format(self):
-        # Returns date as string like "1989-01-04"
-        return self.strftime(format="%Y-%m-%d")
-
-
-datetime.date = FormattedDateTime
-
-
 class RelativeDate:
-    def __init__(self):
+    def __init__(self, day_of_week: str, weeks_ago: int):
         self.__today = datetime.date.today()
-        self.this_monday = self.date_of_weekday("Monday", weeks_ago=0)
-        self.last_sunday = self.date_of_weekday("Sunday", weeks_ago=1)
-        self.last_monday = self.date_of_weekday("Monday", weeks_ago=1)
+        self.date = self._date_of_weekday(day_of_week, weeks_ago)
 
-    def date_of_weekday(self, day_of_week: str, weeks_ago: int):
+    def long_format(self):
+        # Returns date as string like "January 4, 1989"
+        return self.date.strftime(format="%B %-d, %Y")
+
+    def short_format(self):
+        # Returns date as string like "1989-01-04"
+        return self.date.strftime(format="%Y-%m-%d")
+
+    def _date_of_weekday(self, day_of_week: str, weeks_ago: int):
         days_since_last_day_of_week = (
-            self.days_since_this_monday()
+            self._days_since_this_monday()
             + weeks_ago * 7
             - self._weekday_number(day_of_week)
         )
         return self.__today - datetime.timedelta(days=days_since_last_day_of_week)
 
-    def days_since_this_monday(self):
+    def _days_since_this_monday(self):
         # `weekday` method returns 0 for mon, 1 for tue, etc.
         return self.__today.weekday()
 

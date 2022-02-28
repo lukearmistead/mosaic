@@ -5,10 +5,10 @@ from utils import RelativeDate
 
 
 LOG_DIR = "/Users/luke.armistead/workspace/log/"
-TODO_FILE = "todo.txt"
+TODO_FILE = "todo-test.txt"
 ARCHIVE_DIR = "review/"
-DATE = RelativeDate()
-ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + DATE.last_monday.short_date_format + "-" + TODO_FILE
+LAST_MONDAY = RelativeDate("Monday", weeks_ago=1)
+ARCHIVE_TODO_PATH = LOG_DIR + ARCHIVE_DIR + LAST_MONDAY.short_format() + "-" + TODO_FILE
 TODO_PATH = LOG_DIR + TODO_FILE
 
 
