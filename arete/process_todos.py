@@ -38,15 +38,15 @@ class ToDo:
 
 class ToDos:
     def __init__(self, path):
-        self.todo_list = open(path, "r")
+        self.todo_list = open(path, "r") # Todo - migrate this TodoFile
         self.task_count = 0
         self.done_count = 0
         self.drop_count = 0
         self.list = []
         self.to_migrate = []
-        self.process_todos()
+        self._process_todos()
 
-    def process_todo(self, todo):
+    def _process_todo(self, todo):
         todo = ToDo(todo)
         if todo.symbol == Symbol.MIGRATE:
             self.to_migrate.append(todo)
@@ -60,10 +60,14 @@ class ToDos:
             return
         self.list.append(todo.name)
 
-    def process_todos(self):
+    def _process_todos(self):
         for todo in self.todo_list:
-            self.process_todo(todo)
+            self._process_todo(todo)
 
+
+class TodosFile:
+    def __init__(self, path):
+        self.path = path
 
 def migrate_todos(path, todos, header):
     assert todos.task_count == 0, f"""{todos.task_count} task(s) prefixed by symbol "{Symbol.TASK}" require review. Please migrate before running!"""
@@ -78,4 +82,3 @@ def migrate_todos(path, todos, header):
 
 if __name__ == "__main__":
     pass
-    # main(TODO_PATH, ARCHIVE_TODO_PATH)

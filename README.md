@@ -1,7 +1,24 @@
 A tool supporting data-driven reflection. Arete pulls data from a variety of sources and summarizes it for self reviews.
 
 
+To get access tokens from Plaid, follow this tutorial: https://youtu.be/sGBvKDGgPjc
+
 Road map:
+
+TASK MANAGEMENT REQS:
+- Edit from terminal
+- Bullet journal behavior
+- Append from command line
+- Append and view from mobile
+- Create, update, delete tracked - is this really a requirement?
+
+JOURNAL REQS:
+- Edit from terminal
+- Track state changes
+
+- What attributes actually need to be exposed for external use?
+- If the `access_token` variable hangs around for days, it may not be fresh.
+    - Write a function `get_access_token` which checks for freshness before providing access to the variable.
 - Add logging to explain completed tasks like writing files
 - Is there an elegant way to deal with the file creation, deletion, and shuffle?
 - Creation and completion timestamps for todos

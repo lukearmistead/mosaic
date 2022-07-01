@@ -16,6 +16,11 @@ logging.basicConfig(
 )
 
 
+# TODO - This should be a class
+class CredsFile:
+    def __init__(self, path):
+        self.path = path
+
 def lookup_yaml(path: str) -> dict:
     """ "
     Returns a dictionary containing the credentials relevant for a particular
@@ -49,7 +54,8 @@ def update_yaml(path: str, new_entry: dict):
 
 def yaml_lookup(path: str, key: str) -> dict:
     "For backwards compatability"
-    return lookup_yaml(path, key)
+    print(path + '/' + key)
+    return lookup_yaml(path + '/' + key)
 
 
 class Creds:
@@ -59,7 +65,6 @@ class Creds:
         - If the `access_token` variable hangs around for days, it may not be fresh.
           Write a function `get_access_token` which checks for freshness before providing access to the variable.
         """
-        
         creds = lookup_yaml(creds_path)[creds_key]
         self.creds_key = creds_key
         self.client_id = creds["client_id"]
@@ -161,23 +166,23 @@ class RelativeDate:
 
 
 if __name__ == "__main__":
-    # YAML tests
-    path, key = "test.yml", {"foo": {"bar": "asdf"}}
-    write_yaml(path, key)
-    print(lookup_yaml(path))
-    update = {"foo": {"baz": "qwerty"}}
-    update_yaml(path, update)
-    print(lookup_yaml(path))
-    os.remove(path)
+    # # YAML tests
+    # path, key = "test.yml", {"foo": {"bar": "asdf"}}
+    # write_yaml(path, key)
+    # print(lookup_yaml(path))
+    # update = {"foo": {"baz": "qwerty"}}
+    # update_yaml(path, update)
+    # print(lookup_yaml(path))
+    # os.remove(path)
 
     # Creds tests
-    print("CREDS TESTS")
-    CREDS_KEY = "strava"
-    CREDS_PATH = "creds.yml"
-    creds = Creds(CREDS_PATH, CREDS_KEY)
-    CREDS_KEY = "fitbit"
-    CREDS_PATH = "creds.yml"
-    creds = Creds(CREDS_PATH, CREDS_KEY)
+    # print("CREDS TESTS")
+    # CREDS_KEY = "strava"
+    # CREDS_PATH = "creds.yml"
+    # creds = Creds(CREDS_PATH, CREDS_KEY)
+    # CREDS_KEY = "fitbit"
+    # CREDS_PATH = "creds.yml"
+    # creds = Creds(CREDS_PATH, CREDS_KEY)
 
     # Date tests
     date = RelativeDate()
