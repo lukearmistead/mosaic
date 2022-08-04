@@ -7,6 +7,47 @@ from utils import lookup_yaml
 
 log.getLogger().setLevel(log.INFO)
 
+
+remapped_categories = {
+    "Hotel": "Travel",
+    "Sports": "Recreation",
+    "Dining out": "Restaurants",
+    "Plane": "Travel",
+    "Liquor": "Bar",
+    "Car": "Travel",
+    "Taxi": "Travel",
+    "TV/Phone/Internet": "Utilities",
+    "Bus/train": "Travel",
+    "Games": "Recreation",
+    "Gas/fuel": "Travel",
+    "Trash": "Utilities",
+    "Insurance": "Utilities",
+    "Groceries": "Supermarkets and Groceries",
+    "General": "Shops",  # This is the def facto general category - could be improved
+    "Rent": "Rent",
+    "Transportation - Other": "Travel",
+    "Household supplies": "Shops",
+    "Furniture": "Shops",
+    "Gifts": "Shops",
+    "Medical expenses": "Medical",
+    "Food and drink - Other": "Restaurants",
+    "Water": "Utilities",
+    "Heat/gas": "Utilities",
+    "Electronics": "Shops",
+    "Clothing": "Shops",
+    "Cleaning": "Utilities",
+    "Parking": "Travel",
+    "Bicycle": "Shops",
+    "Electricity": "Utilities",
+    "Entertainment - Other": "Recreation",
+    "Home - Other": "Shops",
+    "Utilities - Other": "Utilities",
+    "Services": "Shops",
+    "Music": "Recreation",
+    "Mortgage": "Rent",
+}
+
+
 def find_splitwise_object(search_id, splitwise_objects):
     for splitwise_object in splitwise_objects:
         if splitwise_object.id == search_id:
@@ -33,21 +74,22 @@ def main():
         unpacked_expense = {
             "id": int(expense.id),
             "date": pd.to_datetime(expense.date).date(),
-            "created_at": pd.to_datetime(expense.created_at),
-            "updated_at": pd.to_datetime(expense.updated_at),
             "description": str(expense.description),
             "is_payment": bool(expense.payment),
-            "transaction_method": str(expense.transaction_method),
             "cost": float(expense.cost),
-            "category": str(expense.category.name),
+            "category": str(remapped_categories[expense.category.name]),
+            "user_names": [user.first_name for user in expense.users],
         }
 
         user = find_splitwise_object(my_user_id, expense.users)
         if user is None:
-            for k in ["user_name", "user_paid_share", "user_owed_share"]:
-                unpacked_expense[k] = 0
+            for k in [
+                "net_balance",
+                "paid_share",
+                "owed_share",
+            ]:
+                unpacked_expense[k] = None
         else:
-            unpacked_expense["user_name"] = str(user.first_name)
             unpacked_expense["net_balance"] = float(user.net_balance)
             unpacked_expense["paid_share"] = float(user.paid_share)
             unpacked_expense["owed_share"] = float(user.owed_share)
@@ -55,7 +97,7 @@ def main():
         group = find_splitwise_object(expense.group_id, groups)
         if group is None:
             for k in ["group_id", "group_name"]:
-                unpacked_expense[k] = 0
+                unpacked_expense[k] = None
         else:
             unpacked_expense["group_id"] = group.id
             unpacked_expense["group_name"] = group.name
