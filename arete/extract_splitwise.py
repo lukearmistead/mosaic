@@ -1,51 +1,17 @@
+from datetime import datetime
 import logging as log
 import pandas as pd
 import requests
 from splitwise import Splitwise
-from utils import lookup_yaml
+from arete.utils import lookup_yaml
 
 
 log.getLogger().setLevel(log.INFO)
-
-
-remapped_categories = {
-    "Hotel": "Travel",
-    "Sports": "Recreation",
-    "Dining out": "Restaurants",
-    "Plane": "Travel",
-    "Liquor": "Bar",
-    "Car": "Travel",
-    "Taxi": "Travel",
-    "TV/Phone/Internet": "Utilities",
-    "Bus/train": "Travel",
-    "Games": "Recreation",
-    "Gas/fuel": "Travel",
-    "Trash": "Utilities",
-    "Insurance": "Utilities",
-    "Groceries": "Supermarkets and Groceries",
-    "General": "Shops",  # This is the def facto general category - could be improved
-    "Rent": "Rent",
-    "Transportation - Other": "Travel",
-    "Household supplies": "Shops",
-    "Furniture": "Shops",
-    "Gifts": "Shops",
-    "Medical expenses": "Medical",
-    "Food and drink - Other": "Restaurants",
-    "Water": "Utilities",
-    "Heat/gas": "Utilities",
-    "Electronics": "Shops",
-    "Clothing": "Shops",
-    "Cleaning": "Utilities",
-    "Parking": "Travel",
-    "Bicycle": "Shops",
-    "Electricity": "Utilities",
-    "Entertainment - Other": "Recreation",
-    "Home - Other": "Shops",
-    "Utilities - Other": "Utilities",
-    "Services": "Shops",
-    "Music": "Recreation",
-    "Mortgage": "Rent",
-}
+CREDS_KEY = "splitwise"
+CREDS_PATH = "creds.yml"
+END_DATE = datetime.now().date()
+START_DATE = datetime(2022, 3, 16).date()
+OUTPUT_PATH = "data/splitwise/splitwise.csv"
 
 
 def find_splitwise_object(search_id, splitwise_objects):
@@ -55,8 +21,21 @@ def find_splitwise_object(search_id, splitwise_objects):
     return None
 
 
-def main():
-    creds = lookup_yaml("creds.yml")["splitwise"]
+def map_category(category_rules, expense):
+    for category, rule in category_rules.items():
+        rule = rule["splitwise"]["category"]
+        if rule is not None and expense in rule:
+            return category
+
+
+def extract_splitwise(
+    creds_path=CREDS_PATH,
+    creds_key=CREDS_KEY,
+    start_date=START_DATE,
+    end_date=END_DATE,
+    output_path=OUTPUT_PATH,
+):
+    creds = lookup_yaml(creds_path)[creds_key]
 
     # https://splitwise.readthedocs.io/en/latest/user/authenticate.html#api-key
     client = Splitwise(
@@ -66,9 +45,11 @@ def main():
     expenses = client.getExpenses(limit=False)
     groups = client.getGroups()
     unpacked_expenses = []
+    rules = lookup_yaml("transaction_categories.yml")
+    splitwise_categories = {}
+    for category, rule in rules.items():
+        splitwise_categories[category] = rule["splitwise"]["category"]
     for expense in expenses:
-        # Useful for debugging
-        # log.info(expense.description, pd.to_datetime(expense.date).date(), 'uid', user.id, 'paid', paid, 'owed', owed, 'balance', user.net_balance)
         if expense.deleted_at is not None:
             continue
         unpacked_expense = {
@@ -77,7 +58,7 @@ def main():
             "description": str(expense.description),
             "is_payment": bool(expense.payment),
             "cost": float(expense.cost),
-            "category": str(remapped_categories[expense.category.name]),
+            "category": str(map_category(rules, expense.category.name)),
             "user_names": [user.first_name for user in expense.users],
         }
 
@@ -106,8 +87,8 @@ def main():
     df = pd.DataFrame(unpacked_expenses)
     log.info(df.head())
     log.info(df.info())
-    df.to_csv("data/splitwise/splitwise.csv", index=False)
+    df.to_csv(output_path, index=False)
 
 
 if __name__ == "__main__":
-    main()
+    extract_splitwise()

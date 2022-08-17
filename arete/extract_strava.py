@@ -3,7 +3,7 @@ import pprint
 import logging
 import pandas as pd
 from stravaio import StravaIO
-from utils import Creds
+from arete.utils import Creds
 
 
 logging.basicConfig(
@@ -22,7 +22,12 @@ def extract_to_dataframe(raw_data) -> pd.DataFrame:
     return pd.DataFrame(processed_data)
 
 
-def extract_strava(extract_data_since, creds_path, creds_key, data_output_path):
+def extract_strava(
+    extract_data_since=SEASON_STARTS_ON,
+    creds_path=CREDS_PATH,
+    creds_key=CREDS_KEY,
+    data_output_path=DATA_OUTPUT_PATH,
+):
     creds = Creds(creds_path, creds_key)
     client = StravaIO(creds.access_token)
     raw_data = client.get_logged_in_athlete_activities(after=extract_data_since)

@@ -3,7 +3,7 @@ import collections.abc
 import datetime
 import json
 import logging
-from python_fitbit.gather_keys_oauth2 import OAuth2Server
+from arete.python_fitbit.gather_keys_oauth2 import OAuth2Server
 import os
 import requests
 from stravaio import strava_oauth2
@@ -20,6 +20,7 @@ logging.basicConfig(
 class CredsFile:
     def __init__(self, path):
         self.path = path
+
 
 def lookup_yaml(path: str) -> dict:
     """ "
@@ -54,8 +55,8 @@ def update_yaml(path: str, new_entry: dict):
 
 def yaml_lookup(path: str, key: str) -> dict:
     "For backwards compatability"
-    print(path + '/' + key)
-    return lookup_yaml(path + '/' + key)
+    print(path + "/" + key)
+    return lookup_yaml(path + "/" + key)
 
 
 class Creds:

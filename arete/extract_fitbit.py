@@ -1,9 +1,10 @@
+from pprint import pprint
 from datetime import datetime, timedelta
 from io import StringIO
-import logging
+import logging as log
 import fitbit
 import pandas as pd
-from utils import Creds
+from arete.utils import Creds
 
 """
 - Create directories if they don't exist
@@ -15,16 +16,12 @@ from utils import Creds
 - Backfilling
 """
 
-logging.basicConfig(
-    level=logging.INFO,
-    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler()],
-)
+log.getLogger().setLevel(log.INFO)
 
 CREDS_KEY = "fitbit"
 CREDS_PATH = "creds.yml"
 END_DATE = datetime.now().date()
-# Fitbit doesn't like if we request more than 100 days. Meh. Fine.
-START_DATE = END_DATE - timedelta(days=100)
+START_DATE = END_DATE - timedelta(days=300)
 RESOURCES = [
     "activities/distance",
     "body/weight",
@@ -103,7 +100,7 @@ def export_to_csv(df, resource, output_dir_path=OUTPUT_DIR_PATH):
     full_path = f"{output_dir_path}/{file_name}.csv"
     buf = StringIO()
     df.info(buf=buf)
-    logging.info(
+    log.info(
         "Exporting the following DataFrame of {} to CSV\n{}".format(
             resource.upper(), buf.getvalue()
         )
@@ -111,7 +108,17 @@ def export_to_csv(df, resource, output_dir_path=OUTPUT_DIR_PATH):
     df.to_csv(full_path, index=False)
 
 
-def main(
+def hit_api(client, resource, start_date, end_date):
+    days_requested = (end_date - start_date).days
+    if days_requested > 100:
+
+        working_end_date = start_date + timedelta(days=100)
+    raw_json_extract = client.time_series(
+        resource, base_date=start_date, end_date=end_date
+    )
+
+
+def extract_fitbit(
     creds_path=CREDS_PATH,
     creds_key=CREDS_KEY,
     start_date=START_DATE,
@@ -129,12 +136,24 @@ def main(
         expires_at=creds.expires_at,
     )
     for resource, key in zip(resources, keys):
-        raw_json_extract = client.time_series(
-            resource, base_date=start_date, end_date=end_date
-        )
-        df = unload_fitbit_payload(raw_json_extract, resource, key)
-        export_to_csv(df, resource, output_dir_path)
+        log.debug(resource)
+        working_start_date = start_date
+        working_end_date = min(working_start_date + timedelta(days=100), end_date)
+        dfs = []
+        more_data_to_extract = True
+        while more_data_to_extract:
+            log.debug(working_start_date)
+            log.debug(working_end_date)
+            raw_json_extract = client.time_series(
+                resource, base_date=working_start_date, end_date=working_end_date
+            )
+            df = unload_fitbit_payload(raw_json_extract, resource, key)
+            dfs.append(df)
+            more_data_to_extract = working_end_date < end_date
+            working_start_date = working_end_date + timedelta(days=1)
+            working_end_date = min((working_start_date + timedelta(days=100)), end_date)
+        export_to_csv(pd.concat(dfs, axis=0), resource, output_dir_path)
 
 
 if __name__ == "__main__":
-    main()
+    extract_fitbit()

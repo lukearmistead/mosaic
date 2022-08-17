@@ -1,0 +1,236 @@
+category_name:
+  plaid:
+    transaction_id:
+    name:
+    original_description:
+    personal_finance_category:
+      primary:
+      detailed:
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+
+general:
+  plaid:
+    transaction_id:
+    name:
+      - 'CALIFORNIA COWBOY'
+      - 'BUREAU OF ACCOUNT MANAGEM'
+      - 'ANTI-CORP'
+      - 'CSC SERVICEWORK'
+      - 'KAHOOT! ASA'
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'GENERAL_MERCHANDISE'
+        - 'GENERAL_SERVICES'
+        - 'PERSONAL_CARE'
+      detailed:
+    category:
+      0: 'Shops'
+      1:
+      2:
+  splitwise:
+    category:
+      - 'General'
+      - 'Household supplies'
+      - 'Furniture'
+      - 'Gifts'
+      - 'Electronics'
+      - 'Clothing'
+      - 'Home - Other'
+      - 'Services'
+      - 'Medical expenses'
+
+grocery:
+  plaid:
+    transaction_id:
+    name:
+      - 'THE NATURE STOP'
+    original_description:
+    personal_finance_category:
+      primary:
+      detailed:
+        - 'FOOD_AND_DRINK_GROCERIES'
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+      - 'Groceries'
+
+income:
+  plaid:
+    transaction_id:
+    name:
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'INCOME'
+      detailed:
+    category:
+      0: 
+      1:
+      2:
+  splitwise:
+    category:
+
+housing:
+  plaid:
+    transaction_id:
+    name:
+      - "Convenience Check Adjustment"
+      - "HOMEOWNERS INSURANCE"
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'RENT_AND_UTILITIES'
+      detailed:
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+      - 'Rent'
+      - 'Mortgage'
+      - 'TV/Phone/Internet'
+      - 'Trash'
+      - 'Water'
+      - 'Heat/gas'
+      - 'Cleaning'
+      - 'Electricity'
+      - 'Utilities - Other'
+
+recreation:
+  plaid:
+    transaction_id:
+    name:
+      - 'CIELE'
+      - 'HIGH TRAILS CYCLERY'
+      - 'TAHOE SPORTS HUB'
+      - 'BCY*BACKCOUNTRY.COM'
+      - 'MOMENT LLC'
+      - 'MISSION CLIFFS'
+      - 'IKON PASS'
+      - 'HIGH ALTITUDE TRUCKEE'
+      - 'SP PAIR OF THIEVES'
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'Entertainment'
+      detailed:
+    category:
+      0: 
+        - 'Recreation'
+      1:
+        - 'Bicycles'
+        - 'Sporting Goods'
+        - 'Entertainment'
+        - 'Arts and Entertainment'
+      2:
+  splitwise:
+    category:
+      - 'Sports'
+      - 'Bicycle'
+      - 'Games'
+      - 'Entertainment - Other'
+      - 'Music'
+
+restaurants:
+  plaid:
+    transaction_id:
+    name:
+      - 'ALPINE MEADOWS FOOD AND B'
+      - 'TAHOE FULL* TAHOE FULL'
+      - 'GJUSTA GROCER'
+      - 'DELAWARE NORTH LOGAN F&B'
+      - 'SP HARBOUR TOWN BAKERY'
+      - 'TST* The Roasting Company'
+      - 'EMPORIUM SF'
+      - 'ZEITGEIST'
+    original_description:
+    personal_finance_category:
+      primary:
+      detailed:
+        - 'FOOD_AND_DRINK_RESTAURANT'
+        - 'FOOD_AND_DRINK_BEER_WINE_AND_LIQUOR'
+        - 'FOOD_AND_DRINK_FAST_FOOD'
+        - 'FOOD_AND_DRINK_COFFEE'
+        - 'FOOD_AND_DRINK_OTHER_FOOD_AND_DRINK'
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+      - 'Dining out'
+      - 'Food and drink - Other'
+      - 'Liquor'
+
+transfer:
+  plaid:
+    transaction_id:
+      - '4o930MgV6yi873aEEogxU5rxjYZrgYCJvkdp6'
+    name:
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'TRANSFER_IN'
+        - 'TRANSFER_OUT'
+        - 'LOAN_PAYMENTS'
+      detailed:
+    category:
+      0: 'Transfer'
+      1:
+      2:
+  splitwise:
+    category:
+
+transportation:
+  plaid:
+    transaction_id:
+    name:
+      - 'GEICO'
+      - 'PURCHASE ADJUSTMENT'
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'TRANSPORTATION'
+      detailed:
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+      - 'Car'
+      - 'Taxi'
+      - 'Bus/train'
+      - 'Parking'
+      - 'Insurance'
+      - 'Gas/fuel'
+      - 'Transportation - Other'
+
+travel:
+  plaid:
+    transaction_id:
+    name:
+      - 'CREDIT-TRAVEL REWARD'
+    original_description:
+    personal_finance_category:
+      primary:
+        - 'TRAVEL'
+      detailed:
+    category:
+      0:
+      1:
+      2:
+  splitwise:
+    category:
+      - 'Hotel'
+      - 'Plane'
