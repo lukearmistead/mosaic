@@ -77,7 +77,7 @@ select coalesce(splitwise.net_balance, plaid.amount) as amount,
        left join splitwise
             on    ((
                     -- Greater flexibility on amount accommodates tips for whole foods grocery store pickups coordinated by Amazon
-                    plaid.category = 'Digital Purchase'
+                    lower(substr(plaid.name, 1, 6))  = 'amazon'
                     and splitwise.paid_share between plaid.amount - 15 and plaid.amount + 15
                     and plaid.date between date(splitwise.date, '-1 days') and date(splitwise.date, '+1 days')
                   ) or (
@@ -152,8 +152,9 @@ def process_expenses():
     t.set_style(PLAIN_COLUMNS)
     t.add_column("", ["count", "$"])
     t.add_column("old", [len(plaid), round(sum(plaid["amount"]), 2)])
-    plaid["amount"] = pandasql.sqldf(SHARED_EXPENSES_QUERY, locals())["amount"]
-    plaid["category"] = pandasql.sqldf(SHARED_EXPENSES_QUERY, locals())["category"]
+    shared_expenses = pandasql.sqldf(SHARED_EXPENSES_QUERY, locals())
+    plaid["amount"] = shared_expenses["amount"]
+    plaid["category"] = shared_expenses["category"]
     t.add_column("new", [len(plaid), round(sum(plaid["amount"]), 2)])
     log.info(
         f"For group expenses paid by me, replacing full amount from Plaid with my share from Splitwise\n{t}"
