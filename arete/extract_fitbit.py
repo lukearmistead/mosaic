@@ -1,4 +1,3 @@
-from pprint import pprint
 from datetime import datetime, timedelta
 from io import StringIO
 import logging as log
@@ -16,7 +15,7 @@ from arete.utils import Creds
 - Backfilling
 """
 
-log.getLogger().setLevel(log.INFO)
+log.getLogger().setLevel(log.DEBUG)
 
 CREDS_KEY = "fitbit"
 CREDS_PATH = "creds.yml"
@@ -29,14 +28,6 @@ RESOURCES = [
     "body/bmi",
     "sleep",
     "activities/heart",
-]
-KEYS = [
-    "activities-distance",
-    "body-weight",
-    "body-fat",
-    "body-bmi",
-    "sleep",
-    "activities-heart",
 ]
 OUTPUT_DIR_PATH = "data/fitbit/"
 
@@ -124,7 +115,6 @@ def extract_fitbit(
     start_date=START_DATE,
     end_date=END_DATE,
     resources=RESOURCES,
-    keys=KEYS,
     output_dir_path=OUTPUT_DIR_PATH,
 ):
     creds = Creds(creds_path, creds_key)
@@ -135,7 +125,8 @@ def extract_fitbit(
         refresh_token=creds.refresh_token,
         expires_at=creds.expires_at,
     )
-    for resource, key in zip(resources, keys):
+    for resource in resources:
+        key = resource.replace('/', '-')
         log.debug(resource)
         working_start_date = start_date
         working_end_date = min(working_start_date + timedelta(days=100), end_date)

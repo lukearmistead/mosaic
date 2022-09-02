@@ -14,7 +14,6 @@ from datetime import datetime
 
 log.getLogger().setLevel(log.INFO)
 
-
 # External
 SEASON_STARTS_ON = "2021-10-01"
 # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
@@ -54,7 +53,7 @@ def main():
 
     # Fitbit
     st.subheader("Heart Rate")
-    extract_fitbit(start_date=pd.to_datetime(SEASON_STARTS_ON), end_date=END_DATE)
+    extract_fitbit(resources=["activities/heart"], start_date=pd.to_datetime(SEASON_STARTS_ON), end_date=END_DATE)
     plt.rcParams.update({"font.size": FONTSIZE})
     df = pd.read_csv("data/fitbit/heart.csv")
     df["dateTime"] = pd.to_datetime(df["dateTime"])
