@@ -2,7 +2,7 @@ from arete.extract_plaid import extract_plaid
 from arete.extract_fitbit import extract_fitbit
 from arete.extract_splitwise import extract_splitwise
 from arete.extract_strava import extract_strava
-from arete.process_expenses import process_expenses
+from arete.transform.transactions import process_expenses
 import logging as log
 import streamlit as st
 import pandas as pd

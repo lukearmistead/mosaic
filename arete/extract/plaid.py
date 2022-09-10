@@ -21,6 +21,7 @@ pd.options.display.max_rows = None
 log.getLogger().setLevel(log.DEBUG)
 
 
+
 CREDS_KEY = "plaid"
 ACCESS_TOKEN_KEY = "plaid_account"
 CREDS_PATH = "creds.yml"
@@ -73,9 +74,9 @@ def categorize_expense(category_rules, expense):
     ]:
         log.debug("FIELD: ", field)
         for category, rules in category_rules.items():
-            log.debug("    CATEGORY: ", category)
+            log.debug(f"    CATEGORY:  {category}")
             mapping = rules["plaid"][field]
-            log.debug("    MAPPING: ", mapping)
+            log.debug("    MAPPING:  {mapping}")
             if mapping is None:
                 continue
             elif field == "personal_finance_category":
