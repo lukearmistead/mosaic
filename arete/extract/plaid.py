@@ -21,7 +21,6 @@ pd.options.display.max_rows = None
 log.getLogger().setLevel(log.DEBUG)
 
 
-
 def get_client(client_id, client_secret):
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
@@ -32,18 +31,21 @@ def get_client(client_id, client_secret):
     return client
 
 
-
 class TransactionsFetcher:
-    def __init__(self, client, access_token,):
+    def __init__(
+        self, client, access_token,
+    ):
         self.client = client
         self.access_token = access_token
         self.options = TransactionsGetRequestOptions(
             include_personal_finance_category=True,
-            )
+        )
 
     @sleep_and_retry
     @limits(calls=30, period=60)
-    def _fetch_request_handler(self, start_date, end_date,):
+    def _fetch_request_handler(
+        self, start_date, end_date,
+    ):
         request = TransactionsGetRequest(
             access_token=self.access_token,
             start_date=start_date,
@@ -57,7 +59,9 @@ class TransactionsFetcher:
             time.sleep(60)
         return response.to_dict()
 
-    def fetch(self, start_date, end_date,):
+    def fetch(
+        self, start_date, end_date,
+    ):
         transactions = []
         still_more_transactions = True
         while still_more_transactions:
@@ -94,9 +98,9 @@ class TransactionCategorizer:
         return False
 
     def _matching_category(self, rule, lookup):
-        start=len(lookup)-1
-        stop=0-1
-        step=-1
+        start = len(lookup) - 1
+        stop = 0 - 1
+        step = -1
         step_backwards_through_subcategories = range(start, stop, step)
         for i in step_backwards_through_subcategories:
             if rule[i] is None:
@@ -117,17 +121,23 @@ class TransactionCategorizer:
                 log.debug(f"    LOOKUP:  {lookup}")
                 if rule is None:
                     continue
-                elif field == "personal_finance_category" and self._matching_personal_finance_category(rule, lookup):
+                elif (
+                    field == "personal_finance_category"
+                    and self._matching_personal_finance_category(rule, lookup)
+                ):
                     return category
                 elif field == "category" and self._matching_category(rule, lookup):
                     return category
-                elif field not in ["personal_finance_category", "category"] and lookup in rule:
+                elif (
+                    field not in ["personal_finance_category", "category"]
+                    and lookup in rule
+                ):
                     return category
         return None
 
 
 def extract_plaid(
-    creds_path= "creds.yml",
+    creds_path="creds.yml",
     creds_key="plaid",
     # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
     # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
@@ -136,9 +146,9 @@ def extract_plaid(
     # Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
     accounts=["aspiration", "chase", "capital_one"],
     output_dir_path="data/plaid/",
-    ):
+):
     creds = lookup_yaml(creds_path)[creds_key]
-    client = get_client(creds['client_id'], creds['client_secret'])
+    client = get_client(creds["client_id"], creds["client_secret"])
     for account in accounts:
         access_token = creds[account]["access_token"]
         transactions_fetcher = TransactionsFetcher(client, access_token)
