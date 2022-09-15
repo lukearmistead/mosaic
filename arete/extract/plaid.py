@@ -22,122 +22,137 @@ log.getLogger().setLevel(log.DEBUG)
 
 
 
-CREDS_KEY = "plaid"
-ACCESS_TOKEN_KEY = "plaid_account"
-CREDS_PATH = "creds.yml"
-# Some institution-specific limitations: https://dashboard.plaid.com/oauth-guide
-# Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
-START_DATE = datetime(2022, 3, 16).date()
-END_DATE = datetime.now().date()
-# Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
-ACCOUNTS = ["aspiration", "chase", "capital_one"]
-OUTPUT_DIR_PATH = "data/plaid/"
-
-
-def get_client(creds):
+def get_client(client_id, client_secret):
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
-        api_key={"clientId": creds["client_id"], "secret": creds["client_secret"],},
+        api_key={"clientId": client_id, "secret": client_secret,},
     )
     api_client = plaid.ApiClient(configuration)
     client = plaid_api.PlaidApi(api_client)
     return client
 
 
-@sleep_and_retry
-@limits(calls=30, period=60)
-def fetch_transactions_response(client, access_token, start_date, end_date, options):
-    request = TransactionsGetRequest(
-        access_token=access_token,
-        start_date=start_date,
-        end_date=end_date,
-        options=options,
-    )
-    try:
-        response = client.transactions_get(request)
-    except:
-        log.info("Hit rate limit unexpectedly. Sleeping a full minute to reset.")
-        time.sleep(60)
-    return response.to_dict()
+
+class TransactionsFetcher:
+    def __init__(self, client, access_token,):
+        self.client = client
+        self.access_token = access_token
+        self.options = TransactionsGetRequestOptions(
+            include_personal_finance_category=True,
+            )
+
+    @sleep_and_retry
+    @limits(calls=30, period=60)
+    def _fetch_request_handler(self, start_date, end_date,):
+        request = TransactionsGetRequest(
+            access_token=self.access_token,
+            start_date=start_date,
+            end_date=end_date,
+            options=self.options,
+        )
+        try:
+            response = self.client.transactions_get(request)
+        except:
+            log.info("Hit rate limit unexpectedly. Sleeping a full minute to reset.")
+            time.sleep(60)
+        return response.to_dict()
+
+    def fetch(self, start_date, end_date,):
+        transactions = []
+        still_more_transactions = True
+        while still_more_transactions:
+            self.options.offset = len(transactions)
+            response = self._fetch_request_handler(start_date, end_date)
+            transactions += response["transactions"]
+            still_more_transactions = len(transactions) < response["total_transactions"]
+        # TODO - This could be a test
+        log.debug(
+            f"Fetched {len(transactions)} transactions vs expected {response['total_transactions']}"
+        )
+        return transactions
 
 
-def categorize_expense(category_rules, expense):
-    categories = []
-    log.debug(categories)
-    log.debug(expense)
-    for field in [
-        "transaction_id",
-        "name",
-        "original_description",
-        "personal_finance_category",
-        "category",
-    ]:
-        log.debug("FIELD: ", field)
-        for category, rules in category_rules.items():
-            log.debug(f"    CATEGORY:  {category}")
-            mapping = rules["plaid"][field]
-            log.debug("    MAPPING:  {mapping}")
-            if mapping is None:
+class TransactionCategorizer:
+    def __init__(self, categorization_rules):
+        self.categorization_rules = categorization_rules
+        self.field_lookup_order = [
+            "transaction_id",
+            "name",
+            "personal_finance_category",
+            "category",
+        ]
+
+    def _matching_personal_finance_category(self, rule, lookup):
+        log.debug("        PERSONAL FINANCE LOOKUP")
+        for specificity in ["detailed", "primary"]:
+            log.debug(f"        SUBRULE {specificity}:   {rule[specificity]}")
+            log.debug(f"        SUBLOOKUP {specificity}: {lookup[specificity]}")
+            if rule[specificity] is None:
                 continue
-            elif field == "personal_finance_category":
-                for subfield in ["primary", "detailed"]:
-                    log.debug(mapping[subfield])
-                    log.debug(expense[field][subfield])
-                    if mapping[subfield] is None:
-                        continue
-                    elif expense[field][subfield] in mapping[subfield]:
-                        return category
-            elif field == "category":
-                subcategory_indices_by_granularity = range(
-                    len(expense[field]) - 1, 0 - 1, -1
-                )
-                for i in subcategory_indices_by_granularity:
-                    if mapping[i] is None:
-                        continue
-                    elif expense[field][i] in mapping[i]:
-                        return category
-            elif expense[field] in mapping:
-                return category
-    return None
+            elif lookup[specificity] in rule[specificity]:
+                return True
+        return False
+
+    def _matching_category(self, rule, lookup):
+        start=len(lookup)-1
+        stop=0-1
+        step=-1
+        step_backwards_through_subcategories = range(start, stop, step)
+        for i in step_backwards_through_subcategories:
+            if rule[i] is None:
+                continue
+            elif lookup[i] in rule[i]:
+                return True
+        return False
+
+    def categorize(self, transaction):
+        log.debug(transaction)
+        for field in self.field_lookup_order:
+            log.debug(f"FIELD: {field}")
+            for category, rules in self.categorization_rules.items():
+                rule = rules["plaid"][field]
+                lookup = transaction[field]
+                log.debug(f"    CATEGORY:  {category}")
+                log.debug(f"    RULE:    {rule}")
+                log.debug(f"    LOOKUP:  {lookup}")
+                if rule is None:
+                    continue
+                elif field == "personal_finance_category" and self._matching_personal_finance_category(rule, lookup):
+                    return category
+                elif field == "category" and self._matching_category(rule, lookup):
+                    return category
+                elif field not in ["personal_finance_category", "category"] and lookup in rule:
+                    return category
+        return None
 
 
 def extract_plaid(
-    creds_path=CREDS_PATH,
-    creds_key=CREDS_KEY,
-    start_date=START_DATE,
-    end_date=END_DATE,
-    accounts=ACCOUNTS,
-    output_dir_path=OUTPUT_DIR_PATH,
-):
+    creds_path= "creds.yml",
+    creds_key="plaid",
+    # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
+    # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
+    start_date=datetime(2022, 3, 16).date(),
+    end_date=datetime.now().date(),
+    # Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
+    accounts=["aspiration", "chase", "capital_one"],
+    output_dir_path="data/plaid/",
+    ):
     creds = lookup_yaml(creds_path)[creds_key]
-    client = get_client(creds)
+    client = get_client(creds['client_id'], creds['client_secret'])
     for account in accounts:
         access_token = creds[account]["access_token"]
-        # Transactions in the response are paginated, so make multiple calls
-        # while increasing the offset to retrieve all transactions
-        options = TransactionsGetRequestOptions()
-        options.include_original_description = True
-        options.include_personal_finance_category = True
-        transactions = []
-        has_more_transactions = True
-        while has_more_transactions:
-            options.offset = len(transactions)
-            response = fetch_transactions_response(
-                client, access_token, start_date, end_date, options
-            )
-            transactions += response["transactions"]
-            # We create the boolean coordinating the loop after receiving the expected transaction count from the df response
-            has_more_transactions = len(transactions) < response["total_transactions"]
+        transactions_fetcher = TransactionsFetcher(client, access_token)
+        transactions = transactions_fetcher.fetch(start_date, end_date)
 
         categorization_rules = lookup_yaml("transaction_categories.yml")
+        transaction_categorizer = TransactionCategorizer(categorization_rules)
         tailored_categories = []
-        for expense in transactions:
-            cat = categorize_expense(categorization_rules, expense)
+        for transaction in transactions:
+            cat = transaction_categorizer.categorize(transaction)
             tailored_categories.append(cat)
 
         # Build dataframe
         df = pd.DataFrame(transactions)
-        df["account_name"] = account
         df["account"] = account
         df["raw_category"] = df["category"]
         df["category"] = tailored_categories
@@ -149,7 +164,6 @@ def extract_plaid(
             "category": "object",
             # "raw_category": "object",
             # "personal_finance_category": "object",
-            "account_name": "object",
             "account": "object",
             "merchant_name": "object",
             "amount": "float64",
@@ -165,11 +179,7 @@ def extract_plaid(
         )
         log.debug(df.head())
         log.debug(df.info())
-        log.debug(
-            f"Returned {len(df)} row table, vs expectation of {response['total_transactions']}"
-        )
-        log.debug(response["total_transactions"])
-        df.to_csv(OUTPUT_DIR_PATH + account + "_transactions.csv", index=False)
+        df.to_csv(output_dir_path + account + "_transactions.csv", index=False)
 
 
 if __name__ == "__main__":

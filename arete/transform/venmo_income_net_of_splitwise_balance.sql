@@ -10,4 +10,4 @@ select coalesce(plaid.amount - splitwise.net_balance, plaid.amount, 0) as amount
             and splitwise.is_payment
             -- This only applies to inflows from Venmo to the checking account
             and splitwise.net_balance < 0 and plaid.amount < 0
-            and plaid.account_name = 'aspiration'
+            and plaid.account = 'aspiration'

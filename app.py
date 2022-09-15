@@ -1,8 +1,8 @@
-from arete.extract_plaid import extract_plaid
-from arete.extract_fitbit import extract_fitbit
-from arete.extract_splitwise import extract_splitwise
-from arete.extract_strava import extract_strava
-from arete.transform.transactions import process_expenses
+from arete.extract.plaid import extract_plaid
+from arete.extract.fitbit import extract_fitbit
+from arete.extract.splitwise import extract_splitwise
+from arete.extract.strava import extract_strava
+from arete.transform.transactions import transform_transactions
 import logging as log
 import streamlit as st
 import pandas as pd
@@ -140,7 +140,7 @@ def main():
             plt.rcParams.update({"font.size": FONTSIZE})
             extract_splitwise(start_date=START_DATE, end_date=END_DATE)
             extract_plaid(start_date=START_DATE, end_date=END_DATE)
-            process_expenses()
+            transform_transactions()
             df = pd.read_csv("data/processed/financial_transactions.csv")
             df["date"] = pd.to_datetime(df["date"])
             df["month"] = df["date"].dt.to_period("M")

@@ -13,6 +13,15 @@ transform_dir = 'arete/transform/'
 output_path = "data/processed/financial_transactions.csv"
 
 
+def read_plaid_transactions(path):
+    transactions = []
+    for file in os.listdir(path):
+        transactions.append(pd.read_csv(path + file))
+    transactions = pd.concat(transactions) \
+        .sort_values("date") \
+        .reset_index(drop=True)
+    return transactions
+
 def read_query(path):
     with open(path, 'r') as f:
         return f.read()
@@ -39,13 +48,9 @@ TRANSACTIONS_WITH_MY_SHARE_OF_GROUP_AMOUNTS = read_query(f"{transform_dir}transa
 
 
 def transform_transactions():
+    plaid = read_plaid_transactions(path="data/plaid/")
 
     # Get plaid data
-    path = "data/plaid/"
-    transactions = []
-    for file in os.listdir(path):
-        transactions.append(pd.read_csv(path + file))
-    plaid = pd.concat(transactions).sort_values("date").reset_index(drop=True)
     splitwise = pd.read_csv("data/splitwise/splitwise.csv").dropna(subset=["net_balance"])
 
     log.info("Lump payments and income from Venmo disguise how cash is actually being spent, which is captured by Splitwise")
@@ -81,7 +86,6 @@ def transform_transactions():
     within_capital_one_window = pd.to_datetime(splitwise["date"]) >= pd.to_datetime(
         "2022-03-16"
     )
-    split_transactions["account_name"] = "splitwise"
     split_transactions["account"] = "splitwise"
     split_transactions["merchant_name"] = None
     split_transactions["category_id"] = None
