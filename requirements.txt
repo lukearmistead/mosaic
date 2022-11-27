@@ -1,6 +1,7 @@
 altair
 cherrypy
 fitbit
+inflection
 matplotlib
 numpy
 pandas
@@ -9,6 +10,8 @@ plaid-python
 pyaml
 oauthlib==2.1.0
 requests-oauthlib==1.1.0
+seaborn
+splitwise
 stravalib
 stravaio
 streamlit

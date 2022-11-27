@@ -3,6 +3,8 @@ from arete.extract.fitbit import extract_fitbit
 from arete.extract.splitwise import extract_splitwise
 from arete.extract.strava import extract_strava
 from arete.transform.transactions import transform_transactions
+from arete.transform.aggregate_periods import aggregate_periods
+import inflection
 import logging as log
 import streamlit as st
 import pandas as pd
@@ -15,201 +17,140 @@ from datetime import datetime
 log.getLogger().setLevel(log.INFO)
 
 # External
-SEASON_STARTS_ON = "2021-10-01"
+STRAVA_START_DATE = "2021-10-01"
 # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
-START_DATE = datetime(2022, 3, 16).date()
+PLAID_START_DATE = datetime(2022, 3, 16).date()
 END_DATE = datetime.now().date()
+START_DATE = END_DATE - pd.DateOffset(weeks=12)
+LAST_WEEK = END_DATE - pd.DateOffset(weeks=2)
+TRAILING_7_DAYS = END_DATE - pd.DateOffset(weeks=1)
 FONTSIZE = 10
 
 
+def line_chart(df, x, y):
+    fig, ax = plt.subplots()
+    sns.lineplot(x=x, y=y, data=df, ax=ax, color="black")
+    ax.set_xlabel(x)
+    ax.set_ylabel(y)
+    ax.set_xticklabels(ax.get_xticks(), rotation=90)
+    myFmt = mdates.DateFormatter("%Y-%m-%d")
+    ax.xaxis.set_major_formatter(myFmt)
+    ax.grid(which="major", axis="y", linestyle="-")
+    sns.despine(left=True)
+    return fig
+
+
+def stacked_bar_chart(df):
+    "Expects `df` to have the time series as the index"
+    fig, ax = plt.subplots()
+    plt.rcParams.update({"font.size": FONTSIZE})
+    df.plot(kind="bar", xlabel="week", ylabel="count", stacked=True, ax=ax)
+    hatches = iter(["///", "..", "x", "o.", "--", "O", "\\", "....", "+"])
+    mapping = {}
+    for bar in ax.patches:
+        color = bar.get_facecolor()
+        if color not in mapping.keys():
+            mapping[color] = next(hatches)
+        bar.set_hatch(mapping[color])
+        bar.set_facecolor("black")
+        bar.set_edgecolor("white")
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.275), ncol=4, frameon=False)
+    sns.despine(left=True)
+    ax.grid(which="major", axis="y", linestyle="-")
+    return fig
+
+
+def run_etl():
+    extract_strava(extract_data_since=STRAVA_START_DATE)
+    extract_fitbit(
+        resources=["activities/heart"],
+        start_date=pd.to_datetime(STRAVA_START_DATE),
+        end_date=END_DATE,
+    )
+    extract_plaid(start_date=PLAID_START_DATE, end_date=END_DATE)
+    extract_splitwise(start_date=PLAID_START_DATE, end_date=END_DATE)
+    transform_transactions()
+    aggregate_periods()
+
+
 def main():
+    df = pd.read_csv("data/processed/aggregate_periods.csv")
+    for col in ["date", "week", "month"]:
+        df[col] = pd.to_datetime(df[col]).dt.date
+
+    if not max(df["date"]) >= START_DATE:
+        run_etl()
+
+    print(df.tail())
     st.title("🏔 Review")
     sns.set_style("white")
 
-    metrics = st.container()
-    with metrics:
-        adventure, heart_rate, spending = st.columns(3)
-    metrics.write()
-
-    charts = st.container()
-    with charts:
-        adventure_chart, health_chart, spending_chart = st.tabs(
-            ["🧗 Adventure", "♥️ Health", "💸 Spending"]
+    adventure, heart_rate, spending = st.columns(3)
+    with adventure:
+        goal = 3
+        run_count = df.loc[df["date"] >= TRAILING_7_DAYS, "run"].sum()
+        st.metric(
+            label="Runs", value=run_count, delta=run_count - goal,  # Goal
         )
-    charts.write()
+    with heart_rate:
+        goal = 50
+        lowest_heart_rate = df.loc[
+            df["date"] >= TRAILING_7_DAYS, "resting_heart_rate"
+        ].min()
+        st.metric(
+            label="Heart Rate",
+            value=lowest_heart_rate,
+            delta=lowest_heart_rate - goal,  # Goal
+        )
+    with spending:
+        goal = 750
+        variable_spending = df.loc[
+            df["date"] >= TRAILING_7_DAYS, "variable_spending"
+        ].sum()
+        st.metric(
+            label="Variable Spending",
+            value=variable_spending,
+            delta=variable_spending - goal,  # Goal
+        )
+    st.write()
 
-    with charts:
-        with adventure_chart:
-            extract_strava(extract_data_since=SEASON_STARTS_ON)
-            df = pd.read_csv("data/strava/activities.csv")
-            df["start_date_local"] = pd.to_datetime(df["start_date_local"])
-            df["month"] = df["start_date_local"].dt.to_period("M")
+    adventure_chart, health_chart, spending_chart = st.tabs(
+        ["🧗 Adventure", "♥️ Health", "💸 Spending"]
+    )
+    within_timeframe = pd.to_datetime(df["date"]).between(
+        pd.to_datetime(START_DATE), pd.to_datetime(END_DATE)
+    )
+    with adventure_chart:
+        cols = [
+            "week",
+            "alpine_ski",
+            "backcountry_ski",
+            "hike",
+            "ride",
+            "rock_climbing",
+            "run",
+            "snowboard",
+            "weight_training",
+        ]
+        agg = df.loc[within_timeframe, cols].groupby("week").sum()
+        fig = stacked_bar_chart(agg)
+        st.pyplot(fig)
 
-            plt.rcParams.update({"font.size": FONTSIZE})
-            fig, ax = plt.subplots()
-            df.pivot_table(
-                values="id", index="month", columns="type", aggfunc="count"
-            ).plot(kind="bar", xlabel="Month", ylabel="Count", stacked=True, ax=ax)
-            hatches = iter(["///", "..", "x", "o.", "--", "O", "\\", "....", "+"])
-            mapping = {}
-            for bar in ax.patches:
-                color = bar.get_facecolor()
-                if color not in mapping.keys():
-                    mapping[color] = next(hatches)
-                bar.set_hatch(mapping[color])
-                bar.set_facecolor("black")
-                bar.set_edgecolor("white")
-            ax.legend(
-                loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=4, frameon=False
-            )
-            sns.despine(left=True)
-            ax.grid(which="major", axis="y", linestyle="-")
-            st.pyplot(fig)
-            st.write()
+    with health_chart:
+        agg = df.loc[within_timeframe, ["date", "resting_heart_rate"]]
+        fig = line_chart(agg, "date", "resting_heart_rate")
+        st.pyplot(fig)
 
-    with metrics:
-        with adventure:
-            df["week"] = df["start_date_local"].dt.to_period("W-MON").dt.start_time
-            last_week_beginning = (
-                (pd.to_datetime("now") - pd.DateOffset(weeks=1))
-                .to_period("W-MON")
-                .start_time.date()
-            )
-
-            last_week_climbing = int(
-                df.query('type == "RockClimbing"')
-                .query("week == @last_week_beginning")
-                .groupby("week")
-                .count()["type"][0]
-            )
-            st.metric(
-                label="Rock Climbing Days",
-                value=last_week_climbing,
-                delta=last_week_climbing - 3,  # Goal
-            )
-
-    with charts:
-        with health_chart:
-            extract_fitbit(
-                resources=["activities/heart"],
-                start_date=pd.to_datetime(SEASON_STARTS_ON),
-                end_date=END_DATE,
-            )
-            plt.rcParams.update({"font.size": FONTSIZE})
-            df = pd.read_csv("data/fitbit/heart.csv")
-            df["dateTime"] = pd.to_datetime(df["dateTime"])
-            fig, ax = plt.subplots()
-            sns.lineplot(
-                x="dateTime", y="restingHeartRate", data=df, ax=ax, color="black",
-            )
-            ax.set_xlabel("Month")
-            ax.set_ylabel("Beats per Minute")
-            ax.set_xticklabels(ax.get_xticks(), rotation=90)
-            ax.grid(which="major", axis="y", linestyle="-")
-            month_format = mdates.DateFormatter("%Y-%m")
-            ax.xaxis.set_major_formatter(month_format)
-            ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
-            sns.despine(left=True)
-            st.pyplot(fig)
-            st.write()
-
-    with metrics:
-        with heart_rate:
-            df["week"] = df["dateTime"].dt.to_period("W-MON").dt.start_time
-            last_week_beginning = (
-                (pd.to_datetime("now") - pd.DateOffset(weeks=1))
-                .to_period("W-MON")
-                .start_time.date()
-            )
-
-            last_week_heart_rate = (
-                df.query("week == @last_week_beginning")
-                .groupby("week")
-                .min()["restingHeartRate"][0]
-            )
-            st.metric(
-                label="Heart Rate Minimum",
-                value=last_week_heart_rate,
-                delta=last_week_heart_rate - 50,  # Goal
-                delta_color="inverse",
-            )
-
-    # Spending
-    with charts:
-        with spending_chart:
-            plt.rcParams.update({"font.size": FONTSIZE})
-            extract_splitwise(start_date=START_DATE, end_date=END_DATE)
-            extract_plaid(start_date=START_DATE, end_date=END_DATE)
-            transform_transactions()
-            df = pd.read_csv("data/processed/financial_transactions.csv")
-            df["date"] = pd.to_datetime(df["date"])
-            df["month"] = df["date"].dt.to_period("M")
-            exclude_categories = ["income", "transfer", "housing"]
-            agg = (
-                df.groupby(["month", "category"], as_index=False)
-                .sum()[["month", "category", "amount"]]
-                .sort_values("month", ascending=True)
-            )
-            category_filter = ~agg["category"].isin(exclude_categories)
-            fig, ax = plt.subplots()
-            ax.set_xticklabels(ax.get_xticks(), rotation=90)
-            barplot = sns.barplot(
-                x="month",
-                y="amount",
-                hue="category",
-                data=agg.loc[category_filter,],
-                estimator=sum,
-                ax=ax,
-            )
-            hatches = iter(["///", "..", "x", "o.", "--", "O", "\\", "....", "+"])
-            mapping = {}
-            for bar in ax.patches:
-                color = bar.get_facecolor()
-                if color not in mapping.keys():
-                    mapping[color] = next(hatches)
-                bar.set_hatch(mapping[color])
-                bar.set_facecolor("black")
-                bar.set_edgecolor("white")
-            # https://stackoverflow.com/questions/4700614/how-to-put-the-legend-outside-the-plot
-            ax.legend(
-                loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=3, frameon=False
-            )
-            ax.grid(which="major", axis="y", linestyle="-")
-            ax.set_xlabel("Month")
-            ax.set_ylabel("$ Amount")
-            sns.despine(left=True)
-            st.pyplot(fig)
-            st.write()
-            with st.expander("All Transactions"):
-                st.table(
-                    df[["name", "date", "category", "account", "amount"]]
-                    .sort_values("date", ascending=False)
-                    .head(500)
-                )
-                st.write()
-
-    # Metrics
-    with metrics:
-        with spending:
-            df["week"] = df["date"].dt.to_period("W-MON").dt.start_time
-            last_week_beginning = (
-                (pd.to_datetime("now") - pd.DateOffset(weeks=1))
-                .to_period("W-MON")
-                .start_time.date()
-            )
-            df["amount"] = df["amount"].astype(int)
-            last_week_spending = (
-                df.loc[~df["category"].isin(exclude_categories),]
-                .query("week == @last_week_beginning")
-                .groupby("week")
-                .sum()["amount"][0]
-            )
-            st.metric(
-                label="Spending",
-                value=int(last_week_spending),
-                delta=int(last_week_spending - 3000 / 4),
-                delta_color="inverse",
-            )
+    with spending_chart:
+        df.info()
+        agg = (
+            df.loc[within_timeframe, ["week", "variable_spending"]]
+            .groupby("week", as_index=False)
+            .sum()
+        )
+        fig = line_chart(agg, "week", "variable_spending")
+        st.pyplot(fig)
+    st.write()
 
 
 if __name__ == "__main__":
