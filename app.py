@@ -71,6 +71,7 @@ def run_etl():
     extract_splitwise(start_date=PLAID_START_DATE, end_date=END_DATE)
     transform_transactions()
     aggregate_periods()
+    print("ran etl")
 
 
 def main():
@@ -78,7 +79,7 @@ def main():
     for col in ["date", "week", "month"]:
         df[col] = pd.to_datetime(df[col]).dt.date
 
-    if not max(df["date"]) >= START_DATE:
+    if not max(df["date"]) >= END_DATE:
         run_etl()
 
     print(df.tail())
@@ -114,8 +115,8 @@ def main():
         )
     st.write()
 
-    adventure_chart, health_chart, spending_chart = st.tabs(
-        ["🧗 Adventure", "♥️ Health", "💸 Spending"]
+    adventure_chart, health_chart, spending_chart, test_chart = st.tabs(
+        ["🧗 Adventure", "♥️ Health", "💸 Spending", "Test"]
     )
     within_timeframe = pd.to_datetime(df["date"]).between(
         pd.to_datetime(START_DATE), pd.to_datetime(END_DATE)
@@ -142,7 +143,6 @@ def main():
         st.pyplot(fig)
 
     with spending_chart:
-        df.info()
         agg = (
             df.loc[within_timeframe, ["week", "variable_spending"]]
             .groupby("week", as_index=False)
@@ -150,6 +150,31 @@ def main():
         )
         fig = line_chart(agg, "week", "variable_spending")
         st.pyplot(fig)
+    with test_chart:
+        agg = df.melt(
+            id_vars="date", value_vars=["resting_heart_rate", "variable_spending"]
+        )
+        import altair as alt
+
+        fig = (
+            alt.Chart(agg)
+            .mark_line()
+            .encode(
+                x=alt.X("date", scale=alt.Scale()),
+                y=alt.Y("value", scale=alt.Scale(zero=False)),
+                row="variable",
+                # color='black',
+            )
+            .resolve_scale(y="independent")
+        )
+
+        st.altair_chart(fig, use_container_width=True)
+
+        # How does spending react to events?
+        # How does heart rate react to events?
+        # Is there a way to pull in adventure?
+        pass
+
     st.write()
 
 

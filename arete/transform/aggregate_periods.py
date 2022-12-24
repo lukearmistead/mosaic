@@ -12,7 +12,6 @@ def read_query(path):
     with open(path, "r") as f:
         return f.read()
 
-# def date_dimension_table(start, end, timezone='America/Los_Angeles'):
 def date_dimension_table(start, end):
     df = pd.DataFrame({"date": pd.date_range(start, end, periods=None, freq="d")})
     df["week"] = df["date"].dt.to_period("W").dt.to_timestamp()
