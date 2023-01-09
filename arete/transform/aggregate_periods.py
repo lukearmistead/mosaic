@@ -8,9 +8,11 @@ output_path = "data/processed/aggregate_periods.csv"
 END_DATE = datetime.now().date()
 START_DATE = datetime(2022, 1, 1)
 
+
 def read_query(path):
     with open(path, "r") as f:
         return f.read()
+
 
 def date_dimension_table(start, end):
     df = pd.DataFrame({"date": pd.date_range(start, end, periods=None, freq="d")})
@@ -41,6 +43,30 @@ def aggregate_periods():
     activity_counts.columns = [snakecase_format(col) for col in activity_counts.columns]
     activity_counts["date"] = convert_to_date(activity_counts["date"])
     df = df.merge(activity_counts, how="left", on="date")
+
+    ski_verts = (
+        strava.loc[strava["type"].isin(["AlpineSki", "BackcountrySki"]),]
+        .pivot_table(
+            values="total_elevation_gain",
+            index="start_date_local",
+            columns="type",
+            aggfunc="sum",
+        )
+        .reset_index()
+        .rename(
+            columns={
+                "start_date_local": "date",
+                "AlpineSki": "alpine_ski_vert",
+                "BackcountrySki": "backcountry_ski_vert",
+            }
+        )
+    )
+    ski_verts["ski_vert"] = ski_verts["alpine_ski_vert"].fillna(0) + ski_verts[
+        "backcountry_ski_vert"
+    ].fillna(0)
+    ski_verts["date"] = convert_to_date(ski_verts["date"])
+    df = df.merge(ski_verts, how="left", on="date")
+    print(df.head())
 
     transactions = pd.read_csv("data/processed/financial_transactions.csv")
     category_filter = ~transactions["category"].isin(["income", "transfer", "housing"])
