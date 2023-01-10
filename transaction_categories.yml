@@ -17,9 +17,13 @@ general:
   plaid:
     transaction_id:
     name:
+      - 'ATM'
+      - 'ATM Withdrawal'
+      - 'ATM Intl. Fee'
+      - 'ANTI-CORP'
       - 'CALIFORNIA COWBOY'
       - 'BUREAU OF ACCOUNT MANAGEM'
-      - 'ANTI-CORP'
+      - 'Microsoft*Store'
       - 'CSC SERVICEWORK'
       - 'KAHOOT! ASA'
     original_description:
@@ -109,15 +113,18 @@ housing:
 recreation:
   plaid:
     transaction_id:
+      - 'xeqReY5mqvIXEJ6v34LAc6LRvP1kRnuR37Md0'
     name:
       - 'CIELE'
       - 'HIGH TRAILS CYCLERY'
+      - 'JONES / YES NOW'
       - 'TAHOE SPORTS HUB'
       - 'BCY*BACKCOUNTRY.COM'
       - 'MOMENT LLC'
       - 'MISSION CLIFFS'
       - 'IKON PASS'
       - 'HIGH ALTITUDE TRUCKEE'
+      - 'REI.COM'
       - 'SP PAIR OF THIEVES'
     original_description:
     personal_finance_category:
@@ -152,6 +159,7 @@ restaurants:
       - 'SP HARBOUR TOWN BAKERY'
       - 'TST* The Roasting Company'
       - 'EMPORIUM SF'
+      - 'ZAS LAKEFRONT'
       - 'ZEITGEIST'
     original_description:
     personal_finance_category:
@@ -176,6 +184,7 @@ transfer:
   plaid:
     transaction_id:
       - '4o930MgV6yi873aEEogxU5rxjYZrgYCJvkdp6'
+      - 'JMXdXgNbQ0uzAAj0BBQvFZqQpK5OmghXPRzRv'
     name:
     original_description:
     personal_finance_category:
@@ -221,6 +230,7 @@ travel:
     transaction_id:
     name:
       - 'CREDIT-TRAVEL REWARD'
+      - 'Chevron'
     original_description:
     personal_finance_category:
       primary:

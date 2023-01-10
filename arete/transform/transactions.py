@@ -92,11 +92,7 @@ def transform_transactions():
     log.info(
         f"For group expenses paid by me, replacing full amount from Plaid with my share from Splitwise"
     )
-    shared_expenses = verbose_query(
-        plaid, splitwise, TRANSACTIONS_WITH_MY_SHARE_OF_GROUP_AMOUNTS
-    )
-    plaid["amount"] = shared_expenses["amount"]
-    plaid["category"] = shared_expenses["category"]
+    plaid = verbose_query(plaid, splitwise, TRANSACTIONS_WITH_MY_SHARE_OF_GROUP_AMOUNTS)
 
     log.info(f"For group expenses paid by others, appending my share from Splitwise")
     t = PrettyTable()
