@@ -89,67 +89,69 @@ def main():
         run_etl()
 
     st.title("🏔 Review")
-    sns.set_style("white")
-    metrics = st.columns(4)
-    in_season = df["date"].between(SEASON_START, SEASON_END)
-    tour_count = df.loc[in_season, "backcountry_ski"].sum()
-    alpine_count = df.loc[in_season, "alpine_ski"].sum()
-    print(df.head())
-    with metrics[0]:
-        st.metric(label="Tour Sessions", value=format_thousands(tour_count), delta=None)
-    with metrics[1]:
-        st.metric(
-            label="Ski Sessions",
-            value=format_thousands(tour_count + alpine_count),
-            delta=None,
-        )
-    with metrics[2]:
-        season_vert = df.loc[in_season, "ski_vert"].sum()
-        st.metric(label="Ski Vert", value=format_thousands(season_vert), delta=None)
-    with metrics[3]:
-        variable_spending = df.loc[
-            df["date"] >= TRAILING_7_DAYS, "variable_spending"
-        ].sum()
-        st.metric(
-            label="Weekly Variable Spend",
-            value="$" + format_thousands(variable_spending),
-            delta=None,
-        )
+
+    goals = st.columns(2)
+    with goals[0]:
+        shasta = st.checkbox('Tour Shasta')
+    with goals[1]:
+        home = st.checkbox('Buy home')
     st.write()
 
-    agg = (
-        df.loc[df["week"].between(START_DATE, END_DATE),]
-        .groupby("week", as_index=False)
-        .agg(
-            {
-                "ski_vert": "sum",
-                "resting_heart_rate": "mean",
-                "variable_spending": "sum",
-            }
-        )
-        .melt(
-            id_vars="week",
-            value_vars=["ski_vert", "resting_heart_rate", "variable_spending"],
-        )
-        .sort_values("variable", ascending=False)
-    )
-    # agg['week'] = pd.to_datetime(agg['week']).dt.date
+    overview, skiing, spending, health = st.tabs(["Overview", "Skiing", "Spending", "Health"])
 
-    fig = (
-        alt.Chart(agg)
-        .mark_bar()
-        .encode(
-            x=alt.X("week", scale=alt.Scale()),
-            y=alt.Y("value", scale=alt.Scale(zero=False)),
-            row="variable",
-        )
-        .properties(height=150)
-        .configure_mark(color="black")
-        .resolve_scale(y="independent")
-    )
+    with overview:
+        metrics = st.columns(3)
+        in_season = df["date"].between(SEASON_START, SEASON_END)
+        tour_count = df.loc[in_season, "backcountry_ski"].sum()
+        alpine_count = df.loc[in_season, "alpine_ski"].sum()
+        with metrics[0]:
+            st.metric(label="Tour Sessions", value=format_thousands(tour_count), delta=None)
+        with metrics[1]:
+            season_vert = df.loc[in_season, "ski_vert"].sum()
+            st.metric(label="Ski Vert", value=format_thousands(season_vert), delta=None)
+        with metrics[2]:
+            variable_spending = df.loc[
+                df["date"] >= TRAILING_7_DAYS, "variable_spending"
+            ].sum()
+            st.metric(
+                label="Weekly Variable Spend",
+                value="$" + format_thousands(variable_spending),
+                delta=None,
+            )
+        st.write()
 
-    st.altair_chart(fig, use_container_width=True)
-    st.write()
+        agg = (
+            df.loc[df["week"].between(START_DATE, END_DATE),]
+            .groupby("week", as_index=False)
+            .agg(
+                {
+                    "ski_vert": "sum",
+                    "resting_heart_rate": "mean",
+                    "variable_spending": "sum",
+                }
+            )
+            .melt(
+                id_vars="week",
+                value_vars=["ski_vert", "resting_heart_rate", "variable_spending"],
+            )
+            .sort_values("variable", ascending=False)
+        )
+
+        fig = (
+            alt.Chart(agg)
+            .mark_bar()
+            .encode(
+                x=alt.X("week", scale=alt.Scale()),
+                y=alt.Y("value", scale=alt.Scale(zero=False)),
+                row="variable",
+            )
+            .properties(height=150)
+            .configure_mark(color="black")
+            .resolve_scale(y="independent")
+        )
+
+        st.altair_chart(fig, use_container_width=True)
+        st.write()
 
 
 if __name__ == "__main__":
