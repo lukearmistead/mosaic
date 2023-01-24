@@ -92,23 +92,83 @@ def main():
 
     goals = st.columns(2)
     with goals[0]:
-        shasta = st.checkbox('Tour Shasta')
+        shasta = st.checkbox("Tour Shasta")
     with goals[1]:
-        home = st.checkbox('Buy home')
+        home = st.checkbox("Buy home")
     st.write()
 
-    overview, skiing, spending, health = st.tabs(["Overview", "Skiing", "Spending", "Health"])
+    skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
 
-    with overview:
-        metrics = st.columns(3)
-        in_season = df["date"].between(SEASON_START, SEASON_END)
-        tour_count = df.loc[in_season, "backcountry_ski"].sum()
-        alpine_count = df.loc[in_season, "alpine_ski"].sum()
+    with skiing:
+        ski = pd.read_csv("data/strava/activities.csv")
+        ski["date"] = pd.to_datetime(ski["start_date_local"]).dt.date
+        ski["session_count"] = 1
+        ski = (
+            ski.loc[ski["date"].between(SEASON_START, SEASON_END),]
+            .loc[ski["type"].isin(["BackcountrySki", "AlpineSki", "Snowboard"]),]
+            .loc[
+                :,
+                [
+                    "id",
+                    "date",
+                    "type",
+                    "total_elevation_gain",
+                    "session_count",
+                    "max_speed",
+                ],
+            ]
+            .sort_values("date")
+        )
+
+        metrics = st.columns(5)
+        tour_count = ski.loc[ski["type"] == "BackcountrySki", "id"].count()
+        alpine_vert = ski.loc[ski["type"] == "AlpineSki", "total_elevation_gain"].sum()
+        alpine_count = ski.loc[ski["type"] == "AlpineSki", "id"].count()
+        print(alpine_vert, alpine_count)
+
         with metrics[0]:
-            st.metric(label="Tour Sessions", value=format_thousands(tour_count), delta=None)
+            st.metric(
+                label="Tour Sessions", value=format_thousands(tour_count), delta=None
+            )
         with metrics[1]:
-            season_vert = df.loc[in_season, "ski_vert"].sum()
-            st.metric(label="Ski Vert", value=format_thousands(season_vert), delta=None)
+            st.metric(
+                label="Max Speed (mps)",
+                value=format_thousands(ski["max_speed"].max()),
+                delta=None,
+            )
+        with metrics[2]:
+            st.metric(
+                label="Session Count",
+                value=format_thousands(ski["id"].count()),
+                delta=None,
+            )
+        with metrics[3]:
+            st.metric(
+                label="Elevation Gain (m)",
+                value=format_thousands(ski["total_elevation_gain"].sum()),
+                delta=None,
+            )
+        with metrics[4]:
+            st.metric(
+                label="Elevation Gain per Alpine Session",
+                value=format_thousands(alpine_vert / alpine_count),
+                delta=None,
+            )
+        st.write()
+
+        ski = ski.groupby("date", as_index=False).agg(
+            {"total_elevation_gain": "sum", "session_count": "sum", "max_speed": "max"}
+        )
+        ski["season_elevation_gain"] = ski["total_elevation_gain"].cumsum().astype(int)
+
+        base = alt.Chart(ski).encode(x="date")
+        line = base.mark_line().encode(y="season_elevation_gain")
+        bar = base.mark_bar(color="gray", opacity=0.7).encode(y="max_speed")
+        chart = alt.layer(line, bar).resolve_scale(y="independent")
+        st.altair_chart(chart, use_container_width=True)
+
+    with spending:
+        metrics = st.columns(3)
         with metrics[2]:
             variable_spending = df.loc[
                 df["date"] >= TRAILING_7_DAYS, "variable_spending"
@@ -118,40 +178,41 @@ def main():
                 value="$" + format_thousands(variable_spending),
                 delta=None,
             )
-        st.write()
 
         agg = (
-            df.loc[df["week"].between(START_DATE, END_DATE),]
+            df.loc[
+                df["week"].between(START_DATE, END_DATE), ["week", "variable_spending"]
+            ]
             .groupby("week", as_index=False)
-            .agg(
-                {
-                    "ski_vert": "sum",
-                    "resting_heart_rate": "mean",
-                    "variable_spending": "sum",
-                }
-            )
-            .melt(
-                id_vars="week",
-                value_vars=["ski_vert", "resting_heart_rate", "variable_spending"],
-            )
-            .sort_values("variable", ascending=False)
+            .sum()
         )
-
-        fig = (
+        st.altair_chart(
             alt.Chart(agg)
             .mark_bar()
             .encode(
                 x=alt.X("week", scale=alt.Scale()),
-                y=alt.Y("value", scale=alt.Scale(zero=False)),
-                row="variable",
-            )
-            .properties(height=150)
-            .configure_mark(color="black")
-            .resolve_scale(y="independent")
+                y=alt.Y("variable_spending", scale=alt.Scale(zero=False)),
+            ),
+            use_container_width=True,
         )
-
-        st.altair_chart(fig, use_container_width=True)
-        st.write()
+        spend = pd.read_csv("data/processed/financial_transactions.csv")
+        spend["date"] = pd.to_datetime(spend["date"]).dt.date
+        spend = spend.loc[
+            spend["date"].between(START_DATE, END_DATE),
+            ["date", "name", "category", "amount"],
+        ]
+        spend["amount"] = spend["amount"].astype(int)
+        st.table(spend.head(50))
+    with health:
+        st.altair_chart(
+            alt.Chart(df)
+            .mark_line()
+            .encode(
+                x=alt.X("date", scale=alt.Scale()),
+                y=alt.Y("resting_heart_rate", scale=alt.Scale(zero=False)),
+            ),
+            use_container_width=True,
+        )
 
 
 if __name__ == "__main__":
