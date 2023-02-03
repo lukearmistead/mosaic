@@ -55,7 +55,9 @@ class TransactionsFetcher:
         try:
             response = self.client.transactions_get(request)
         except:
-            getLogger.info("Hit rate limit unexpectedly. Sleeping a full minute to reset.")
+            getLogger.info(
+                "Hit rate limit unexpectedly. Sleeping a full minute to reset."
+            )
             time.sleep(60)
         return response.to_dict()
 
@@ -136,8 +138,9 @@ class TransactionCategorizer:
         return None
 
 
-def extract_plaid(creds_path, creds_key, start_date, end_date,
-    endpoints,):
+def extract_plaid(
+    creds_path, creds_key, start_date, end_date, endpoints,
+):
     creds = lookup_yaml(creds_path)[creds_key]
     client = get_client(creds["client_id"], creds["client_secret"])
     for account, config in endpoints.items():
@@ -180,4 +183,4 @@ def extract_plaid(creds_path, creds_key, start_date, end_date,
         )
         getLogger.debug(df.head())
         getLogger.debug(df.info())
-        df.to_csv(config['output_path'], index=False)
+        df.to_csv(config["output_path"], index=False)

@@ -23,7 +23,14 @@ def date_dimension_table(start, end):
     return df
 
 
-def transform_aggregate(start_date, end_date, transform_transactions_path, extract_strava_path, transform_resting_heart_rates_path, output_path):
+def transform_aggregate(
+    start_date,
+    end_date,
+    transform_transactions_path,
+    extract_strava_path,
+    transform_resting_heart_rates_path,
+    output_path,
+):
     df = date_dimension_table(start=start_date, end=end_date)
     strava = pd.read_csv(extract_strava_path)
     activity_counts = (
@@ -73,5 +80,7 @@ def transform_aggregate(start_date, end_date, transform_transactions_path, extra
     df = df.merge(variable_spending, how="left", on="date")
     hearts = pd.read_csv(transform_resting_heart_rates_path)
     df = df.merge(hearts, how="left", on="date")
-    df = df.loc[df["date"].between(start_date, end_date),]
+    df = df.loc[
+        df["date"].between(start_date, end_date),
+    ]
     df.to_csv(output_path, index=False)

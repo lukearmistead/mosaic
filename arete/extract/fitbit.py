@@ -76,11 +76,7 @@ def hit_api(client, resource, start_date, end_date):
 
 
 def extract_fitbit(
-    start_date,
-    end_date,
-    creds_path,
-    creds_key,
-    endpoints,
+    start_date, end_date, creds_path, creds_key, endpoints,
 ):
     creds = Creds(creds_path, creds_key)
     client = fitbit.Fitbit(
@@ -91,7 +87,7 @@ def extract_fitbit(
         expires_at=creds.expires_at,
     )
     for resource, config in endpoints.items():
-        key = resource.replace('/', '-')
+        key = resource.replace("/", "-")
         getLogger.debug(resource)
         working_start_date = start_date
         working_end_date = min(working_start_date + timedelta(days=100), end_date)
@@ -108,4 +104,4 @@ def extract_fitbit(
             more_data_to_extract = working_end_date < end_date
             working_start_date = working_end_date + timedelta(days=1)
             working_end_date = min((working_start_date + timedelta(days=100)), end_date)
-        pd.concat(dfs, axis=0).to_csv(config['output_path'], index=False)
+        pd.concat(dfs, axis=0).to_csv(config["output_path"], index=False)

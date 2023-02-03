@@ -18,11 +18,7 @@ def extract_to_dataframe(raw_data) -> pd.DataFrame:
 
 
 def extract_strava(
-    start_date,
-    end_date,
-    creds_path,
-    creds_key,
-    output_path,
+    start_date, end_date, creds_path, creds_key, output_path,
 ):
     creds = Creds(creds_path, creds_key)
     client = StravaIO(creds.access_token)

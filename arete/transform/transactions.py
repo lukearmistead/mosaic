@@ -15,7 +15,7 @@ transform_dir = "arete/transform/"
 def read_plaid_transactions(endpoints):
     transactions = []
     for account, config in endpoints.items():
-        transactions.append(pd.read_csv(config['output_path']))
+        transactions.append(pd.read_csv(config["output_path"]))
     transactions = pd.concat(transactions).sort_values("date").reset_index(drop=True)
     return transactions
 
@@ -55,12 +55,12 @@ TRANSACTIONS_WITH_MY_SHARE_OF_GROUP_AMOUNTS = read_query(
 )
 
 
-def transform_transactions(start_date, end_date, extract_plaid_endpoints, extract_splitwise_path, output_path):
+def transform_transactions(
+    start_date, end_date, extract_plaid_endpoints, extract_splitwise_path, output_path
+):
     plaid = read_plaid_transactions(extract_plaid_endpoints)
 
-    splitwise = pd.read_csv(extract_splitwise_path).dropna(
-        subset=["net_balance"]
-    )
+    splitwise = pd.read_csv(extract_splitwise_path).dropna(subset=["net_balance"])
 
     getLogger.info(
         "Lump payments and income from Venmo disguise how cash is actually being spent, which is captured by Splitwise"
@@ -92,7 +92,9 @@ def transform_transactions(start_date, end_date, extract_plaid_endpoints, extrac
     )
     plaid = verbose_query(plaid, splitwise, TRANSACTIONS_WITH_MY_SHARE_OF_GROUP_AMOUNTS)
 
-    getLogger.info(f"For group expenses paid by others, appending my share from Splitwise")
+    getLogger.info(
+        f"For group expenses paid by others, appending my share from Splitwise"
+    )
     t = PrettyTable()
     t.set_style(PLAIN_COLUMNS)
     t.add_column("", ["count", "$"])
@@ -102,7 +104,9 @@ def transform_transactions(start_date, end_date, extract_plaid_endpoints, extrac
     split_transactions = splitwise.rename(
         columns={"id": "transaction_id", "description": "name", "owed_share": "amount"}
     )
-    within_capital_one_window = convert_vector_to_date(splitwise["date"]).between(start_date, end_date)
+    within_capital_one_window = convert_vector_to_date(splitwise["date"]).between(
+        start_date, end_date
+    )
     split_transactions["account"] = "splitwise"
     split_transactions["merchant_name"] = None
     split_transactions["category_id"] = None

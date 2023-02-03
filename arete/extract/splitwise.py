@@ -24,11 +24,7 @@ def map_category(category_rules, expense):
 
 
 def extract_splitwise(
-    creds_path,
-    creds_key,
-    start_date,
-    end_date,
-    output_path,
+    creds_path, creds_key, start_date, end_date, output_path,
 ):
     creds = lookup_yaml(creds_path)[creds_key]
 

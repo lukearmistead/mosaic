@@ -51,8 +51,8 @@ def format_thousands(value):
 
 
 def main():
-    config = lookup_yaml('etl_config.yml')
-    df = pd.read_csv(config['transform']['aggregate']['output_path'])
+    config = lookup_yaml("etl_config.yml")
+    df = pd.read_csv(config["transform"]["aggregate"]["output_path"])
     for col in ["date", "week", "month"]:
         df[col] = pd.to_datetime(df[col]).dt.date
     if not max(df["date"]) >= datetime.date.today():
@@ -69,7 +69,7 @@ def main():
     skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
 
     with skiing:
-        ski = pd.read_csv(config['transform']['skis']['output_path'])
+        ski = pd.read_csv(config["transform"]["skis"]["output_path"])
         metrics = st.columns(5)
         tour_count = ski.loc[ski["type"] == "backcountry_ski", "id"].count()
         alpine_vert = ski.loc[ski["type"] == "alpine_ski", "total_elevation_gain"].sum()
@@ -87,9 +87,7 @@ def main():
             )
         with metrics[2]:
             st.metric(
-                label="Days",
-                value=format_thousands(ski["date"].nunique()),
-                delta=None,
+                label="Days", value=format_thousands(ski["date"].nunique()), delta=None,
             )
         with metrics[3]:
             st.metric(
@@ -139,13 +137,13 @@ def main():
             ),
             use_container_width=True,
         )
-        spend = pd.read_csv(config['transform']['transactions']['output_path'])
+        spend = pd.read_csv(config["transform"]["transactions"]["output_path"])
         spend["date"] = pd.to_datetime(spend["date"]).dt.date
         spend = spend[["date", "name", "category", "amount"]]
         spend["amount"] = spend["amount"].astype(int)
         st.table(spend.head(50))
     with health:
-        # TODO - replace aggregate with resting_heart_rate? 
+        # TODO - replace aggregate with resting_heart_rate?
         st.altair_chart(
             alt.Chart(df)
             .mark_line()

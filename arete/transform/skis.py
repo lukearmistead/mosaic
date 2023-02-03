@@ -23,20 +23,16 @@ def transform_skis(start_date, end_date, extract_strava_path, output_path):
     df["type"] = df["type"].apply(lambda x: snakecase_format(x))
     df["max_speed"] = mps_to_mph(df["max_speed"])
     df = (
-        df
-        .loc[df["date"].between(start_date, end_date),]
+        df.loc[df["date"].between(start_date, end_date),]
         .loc[df["type"].isin(["backcountry_ski", "alpine_ski", "snowboard"]),]
-        .loc[:,[
-            "id",
-            "date",
-            "type",
-            "total_elevation_gain",
-            "max_speed",
-            ]]
+        .loc[:, ["id", "date", "type", "total_elevation_gain", "max_speed",]]
         .sort_values("date")
     )
-    getLogger.info(f"Outputting ski data between {start_date} and {end_date} to {output_path}:\n{df.head()}")
+    getLogger.info(
+        f"Outputting ski data between {start_date} and {end_date} to {output_path}:\n{df.head()}"
+    )
     df.to_csv(output_path)
+
 
 if __name__ == "__main__":
     main()
