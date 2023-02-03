@@ -2,7 +2,7 @@ import ast
 import os
 import requests
 from datetime import datetime, timedelta
-import logging as log
+import logging as getLogger
 import pandas as pd
 import plaid
 from plaid.api import plaid_api
@@ -18,7 +18,7 @@ from arete.utils import lookup_yaml
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
-log.getLogger().setLevel(log.DEBUG)
+getLogger.getLogger().setLevel(getLogger.DEBUG)
 
 
 def get_client(client_id, client_secret):
@@ -55,7 +55,7 @@ class TransactionsFetcher:
         try:
             response = self.client.transactions_get(request)
         except:
-            log.info("Hit rate limit unexpectedly. Sleeping a full minute to reset.")
+            getLogger.info("Hit rate limit unexpectedly. Sleeping a full minute to reset.")
             time.sleep(60)
         return response.to_dict()
 
@@ -70,7 +70,7 @@ class TransactionsFetcher:
             transactions += response["transactions"]
             still_more_transactions = len(transactions) < response["total_transactions"]
         # TODO - This could be a test
-        log.debug(
+        getLogger.debug(
             f"Fetched {len(transactions)} transactions vs expected {response['total_transactions']}"
         )
         return transactions
@@ -87,10 +87,10 @@ class TransactionCategorizer:
         ]
 
     def _matching_personal_finance_category(self, rule, lookup):
-        log.debug("        PERSONAL FINANCE LOOKUP")
+        getLogger.debug("        PERSONAL FINANCE LOOKUP")
         for specificity in ["detailed", "primary"]:
-            log.debug(f"        SUBRULE {specificity}:   {rule[specificity]}")
-            log.debug(f"        SUBLOOKUP {specificity}: {lookup[specificity]}")
+            getLogger.debug(f"        SUBRULE {specificity}:   {rule[specificity]}")
+            getLogger.debug(f"        SUBLOOKUP {specificity}: {lookup[specificity]}")
             if rule[specificity] is None:
                 continue
             elif lookup[specificity] in rule[specificity]:
@@ -110,15 +110,15 @@ class TransactionCategorizer:
         return False
 
     def categorize(self, transaction):
-        log.debug(transaction)
+        getLogger.debug(transaction)
         for field in self.field_lookup_order:
-            log.debug(f"FIELD: {field}")
+            getLogger.debug(f"FIELD: {field}")
             for category, rules in self.categorization_rules.items():
                 rule = rules["plaid"][field]
                 lookup = transaction[field]
-                log.debug(f"    CATEGORY:  {category}")
-                log.debug(f"    RULE:    {rule}")
-                log.debug(f"    LOOKUP:  {lookup}")
+                getLogger.debug(f"    CATEGORY:  {category}")
+                getLogger.debug(f"    RULE:    {rule}")
+                getLogger.debug(f"    LOOKUP:  {lookup}")
                 if rule is None:
                     continue
                 elif (
@@ -136,20 +136,11 @@ class TransactionCategorizer:
         return None
 
 
-def extract_plaid(
-    creds_path="creds.yml",
-    creds_key="plaid",
-    # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
-    # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
-    start_date=datetime(2022, 3, 16).date(),
-    end_date=datetime.now().date(),
-    # Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
-    accounts=["aspiration", "chase", "capital_one"],
-    output_dir_path="data/plaid/",
-):
+def extract_plaid(creds_path, creds_key, start_date, end_date,
+    endpoints,):
     creds = lookup_yaml(creds_path)[creds_key]
     client = get_client(creds["client_id"], creds["client_secret"])
-    for account in accounts:
+    for account, config in endpoints.items():
         access_token = creds[account]["access_token"]
         transactions_fetcher = TransactionsFetcher(client, access_token)
         transactions = transactions_fetcher.fetch(start_date, end_date)
@@ -181,16 +172,12 @@ def extract_plaid(
         df = df.astype(dtype=column_types)[column_types.keys()]
 
         # Outputs for debugging
-        log.info(
+        getLogger.info(
             f"{account} transaction extract for {start_date} till {end_date} complete"
         )
-        log.debug(
+        getLogger.debug(
             f"""{account} earliest and latest transaction dates: {df["date"].min()}, {df["date"].max()}"""
         )
-        log.debug(df.head())
-        log.debug(df.info())
-        df.to_csv(output_dir_path + account + "_transactions.csv", index=False)
-
-
-if __name__ == "__main__":
-    extract_plaid()
+        getLogger.debug(df.head())
+        getLogger.debug(df.info())
+        df.to_csv(config['output_path'], index=False)

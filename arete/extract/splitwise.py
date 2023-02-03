@@ -1,17 +1,12 @@
 from datetime import datetime
-import logging as log
+import logging as getLogger
 import pandas as pd
 import requests
 from splitwise import Splitwise
 from arete.utils import lookup_yaml
 
 
-log.getLogger().setLevel(log.INFO)
-CREDS_KEY = "splitwise"
-CREDS_PATH = "creds.yml"
-END_DATE = datetime.now().date()
-START_DATE = datetime(2022, 3, 16).date()
-OUTPUT_PATH = "data/splitwise/splitwise.csv"
+getLogger.getLogger().setLevel(getLogger.INFO)
 
 
 def find_splitwise_object(search_id, splitwise_objects):
@@ -29,11 +24,11 @@ def map_category(category_rules, expense):
 
 
 def extract_splitwise(
-    creds_path=CREDS_PATH,
-    creds_key=CREDS_KEY,
-    start_date=START_DATE,
-    end_date=END_DATE,
-    output_path=OUTPUT_PATH,
+    creds_path,
+    creds_key,
+    start_date,
+    end_date,
+    output_path,
 ):
     creds = lookup_yaml(creds_path)[creds_key]
 
@@ -85,10 +80,6 @@ def extract_splitwise(
         unpacked_expenses.append(unpacked_expense)
 
     df = pd.DataFrame(unpacked_expenses)
-    log.info(df.head())
-    log.info(df.info())
+    getLogger.info(df.head())
+    getLogger.info(df.info())
     df.to_csv(output_path, index=False)
-
-
-if __name__ == "__main__":
-    extract_splitwise()

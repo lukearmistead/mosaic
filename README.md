@@ -5,6 +5,10 @@ To get access tokens from Plaid, follow this tutorial: https://youtu.be/sGBvKDGg
 
 Road map:
 
+Ideas
+- Relative date handler for config
+- Make endpoint-specific configurations for extracts
+
 TASK MANAGEMENT REQS:
 - Edit from terminal
 - Bullet journal behavior
@@ -15,7 +19,6 @@ TASK MANAGEMENT REQS:
 JOURNAL REQS:
 - Edit from terminal
 - Track state changes
-
 - What attributes actually need to be exposed for external use?
 - If the `access_token` variable hangs around for days, it may not be fresh.
     - Write a function `get_access_token` which checks for freshness before providing access to the variable.

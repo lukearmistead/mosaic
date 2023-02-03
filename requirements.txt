@@ -1,4 +1,5 @@
 altair
+dateparser
 cherrypy
 fitbit
 inflection
@@ -15,3 +16,4 @@ splitwise
 stravalib
 stravaio
 streamlit
+watchdog

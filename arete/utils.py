@@ -1,9 +1,12 @@
+from arete.python_fitbit.gather_keys_oauth2 import OAuth2Server
 import base64
 import collections.abc
 import datetime
+import dateparser
+import inflection
 import json
 import logging
-from arete.python_fitbit.gather_keys_oauth2 import OAuth2Server
+import pandas as pd
 import os
 import requests
 from stravaio import strava_oauth2
@@ -16,6 +19,19 @@ logging.basicConfig(
 )
 
 
+def snakecase_format(string):
+    return inflection.underscore(string)
+
+
+def convert_string_to_date(string):
+    return dateparser.parse(string).date()
+
+
+def convert_vector_to_date(vector):
+    return vector.map(convert_string_to_date)
+    # return pd.to_datetime(vector).dt.date.astype("datetime64[ns]")
+
+
 # TODO - This should be a class
 class CredsFile:
     def __init__(self, path):
@@ -23,9 +39,7 @@ class CredsFile:
 
 
 def lookup_yaml(path: str) -> dict:
-    """ "
-    Returns a dictionary containing the credentials relevant for a particular
-    API, generally including a  client id and secret
+    """ Returns a dictionary containing the credentials relevant for a particular API, generally including a  client id and secret
     """
     with open(path, "r") as stream:
         return yaml.safe_load(stream)

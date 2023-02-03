@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from io import StringIO
-import logging as log
+import logging as getLogger
 import fitbit
 import pandas as pd
-from arete.utils import Creds
+from arete.utils import Creds, lookup_yaml
 
 """
 - Create directories if they don't exist
@@ -15,21 +15,7 @@ from arete.utils import Creds
 - Backfilling
 """
 
-log.getLogger().setLevel(log.DEBUG)
-
-CREDS_KEY = "fitbit"
-CREDS_PATH = "creds.yml"
-END_DATE = datetime.now().date()
-START_DATE = END_DATE - timedelta(days=300)
-RESOURCES = [
-    "activities/distance",
-    "body/weight",
-    "body/fat",
-    "body/bmi",
-    "sleep",
-    "activities/heart",
-]
-OUTPUT_DIR_PATH = "data/fitbit/"
+getLogger.getLogger().setLevel(getLogger.DEBUG)
 
 
 def unload_simple_json(data, d=None):
@@ -79,26 +65,6 @@ def unload_fitbit_payload(raw_json_extract, resource, key):
     return df
 
 
-def extract_file_name_from_resource(resource):
-    # Create directory if doesn't exist
-    file_name = resource.split("/")
-    file_name = file_name[1] if len(file_name) > 1 else file_name[0]
-    return file_name
-
-
-def export_to_csv(df, resource, output_dir_path=OUTPUT_DIR_PATH):
-    file_name = extract_file_name_from_resource(resource)
-    full_path = f"{output_dir_path}/{file_name}.csv"
-    buf = StringIO()
-    df.info(buf=buf)
-    log.info(
-        "Exporting the following DataFrame of {} to CSV\n{}".format(
-            resource.upper(), buf.getvalue()
-        )
-    )
-    df.to_csv(full_path, index=False)
-
-
 def hit_api(client, resource, start_date, end_date):
     days_requested = (end_date - start_date).days
     if days_requested > 100:
@@ -110,12 +76,11 @@ def hit_api(client, resource, start_date, end_date):
 
 
 def extract_fitbit(
-    creds_path=CREDS_PATH,
-    creds_key=CREDS_KEY,
-    start_date=START_DATE,
-    end_date=END_DATE,
-    resources=RESOURCES,
-    output_dir_path=OUTPUT_DIR_PATH,
+    start_date,
+    end_date,
+    creds_path,
+    creds_key,
+    endpoints,
 ):
     creds = Creds(creds_path, creds_key)
     client = fitbit.Fitbit(
@@ -125,16 +90,16 @@ def extract_fitbit(
         refresh_token=creds.refresh_token,
         expires_at=creds.expires_at,
     )
-    for resource in resources:
+    for resource, config in endpoints.items():
         key = resource.replace('/', '-')
-        log.debug(resource)
+        getLogger.debug(resource)
         working_start_date = start_date
         working_end_date = min(working_start_date + timedelta(days=100), end_date)
         dfs = []
         more_data_to_extract = True
         while more_data_to_extract:
-            log.debug(working_start_date)
-            log.debug(working_end_date)
+            getLogger.debug(working_start_date)
+            getLogger.debug(working_end_date)
             raw_json_extract = client.time_series(
                 resource, base_date=working_start_date, end_date=working_end_date
             )
@@ -143,8 +108,4 @@ def extract_fitbit(
             more_data_to_extract = working_end_date < end_date
             working_start_date = working_end_date + timedelta(days=1)
             working_end_date = min((working_start_date + timedelta(days=100)), end_date)
-        export_to_csv(pd.concat(dfs, axis=0), resource, output_dir_path)
-
-
-if __name__ == "__main__":
-    extract_fitbit()
+        pd.concat(dfs, axis=0).to_csv(config['output_path'], index=False)
