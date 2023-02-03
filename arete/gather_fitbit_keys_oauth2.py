@@ -12,6 +12,8 @@ from fitbit.api import Fitbit
 from oauthlib.oauth2.rfc6749.errors import MismatchingStateError, MissingTokenError
 
 
+# This module is directly copied from the python-fitbit package
+# https://github.com/orcasgit/python-fitbit/blob/master/gather_keys_oauth2.py
 class OAuth2Server:
     def __init__(self, client_id, client_secret,
                  redirect_uri='http://127.0.0.1:8080/'):

@@ -1,4 +1,4 @@
-from arete.python_fitbit.gather_keys_oauth2 import OAuth2Server
+from arete.gather_fitbit_keys_oauth2 import OAuth2Server
 import base64
 import collections.abc
 import datetime
