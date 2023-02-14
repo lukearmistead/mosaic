@@ -22,6 +22,7 @@ general:
       - 'ATM Intl. Fee'
       - 'ANTI-CORP'
       - 'CALIFORNIA COWBOY'
+      - 'CAPITAL ONE MEMBER FEE'
       - 'BUREAU OF ACCOUNT MANAGEM'
       - 'Microsoft*Store'
       - 'CSC SERVICEWORK'
@@ -89,6 +90,7 @@ housing:
     name:
       - "Convenience Check Adjustment"
       - "HOMEOWNERS INSURANCE"
+      - "4TE*EASTERN REGIONAL LAND"
     original_description:
     personal_finance_category:
       primary:
@@ -126,6 +128,7 @@ recreation:
       - 'HIGH ALTITUDE TRUCKEE'
       - 'REI.COM'
       - 'SP PAIR OF THIEVES'
+      - 'ALPENGLOW SPORTS'
     original_description:
     personal_finance_category:
       primary:
@@ -153,6 +156,7 @@ restaurants:
     transaction_id:
     name:
       - 'ALPINE MEADOWS FOOD AND B'
+      - 'CHURCH KEY'
       - 'TAHOE FULL* TAHOE FULL'
       - 'GJUSTA GROCER'
       - 'DELAWARE NORTH LOGAN F&B'
@@ -228,6 +232,8 @@ transportation:
 travel:
   plaid:
     transaction_id:
+      - 'rew6eo5XwVIgEwkXL714TPry1LyevEUrR4mka'
+      - 'jm98mrRA9VFMbmnxJOv0TXAp5kprLMtv6PNaj'
     name:
       - 'CREDIT-TRAVEL REWARD'
       - 'Chevron'

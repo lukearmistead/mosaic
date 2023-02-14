@@ -25,6 +25,12 @@ def read_query(path):
         return f.read()
 
 
+def date_period_vector(v, period):
+    return convert_vector_to_date(
+        pd.to_datetime(v).dt.to_period(period).dt.to_timestamp().astype(str)
+    )
+
+
 def verbose_query(plaid, splitwise, query):
     t = PrettyTable()
     t.set_style(PLAIN_COLUMNS)
@@ -104,6 +110,7 @@ def transform_transactions(
     split_transactions = splitwise.rename(
         columns={"id": "transaction_id", "description": "name", "owed_share": "amount"}
     )
+    # TODO - Is this helping?
     within_capital_one_window = convert_vector_to_date(splitwise["date"]).between(
         start_date, end_date
     )
@@ -131,6 +138,14 @@ def transform_transactions(
     getLogger.info(
         f"Removed {new_ct - ct} rows, resulting in a ${new_amt - amt:.2f} change in cash flow to ${new_amt:.2f}"
     )
+
+    getLogger.info("Enriching with time dimensions and categories")
+    plaid["is_variable"] = ~plaid["category"].isin(["income", "transfer", "housing"])
+    plaid = plaid.loc[
+        convert_vector_to_date(plaid["date"]).between(start_date, end_date),
+    ]
+    plaid["week"] = date_period_vector(plaid["date"], "W")
+    plaid["month"] = date_period_vector(plaid["date"], "M")
 
     getLogger.info(f"Saving processed data to {output_path}\n{plaid.info()}")
     plaid.to_csv(output_path, index=False)

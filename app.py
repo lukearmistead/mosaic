@@ -1,5 +1,5 @@
 from arete.etl import run_etl
-from arete.utils import convert_string_to_date, lookup_yaml
+from arete.utils import convert_vector_to_date, lookup_yaml
 import altair as alt
 import logging as getLogger
 import streamlit as st
@@ -13,50 +13,23 @@ import datetime
 getLogger.getLogger().setLevel(getLogger.INFO)
 
 
-def line_chart(df, x, y):
-    fig, ax = plt.subplots()
-    sns.lineplot(x=x, y=y, data=df, ax=ax, color="black")
-    ax.set_xlabel(x)
-    ax.set_ylabel(y)
-    ax.set_xticklabels(ax.get_xticks(), rotation=90)
-    myFmt = mdates.DateFormatter("%Y-%m-%d")
-    ax.xaxis.set_major_formatter(myFmt)
-    ax.grid(which="major", axis="y", linestyle="-")
-    sns.despine(left=True)
-    return fig
-
-
-def stacked_bar_chart(df):
-    "Expects `df` to have the time series as the index"
-    fig, ax = plt.subplots()
-    plt.rcParams.update({"font.size": 10})
-    df.plot(kind="bar", xlabel="week", ylabel="count", stacked=True, ax=ax)
-    hatches = iter(["///", "..", "x", "o.", "--", "O", "\\", "....", "+"])
-    mapping = {}
-    for bar in ax.patches:
-        color = bar.get_facecolor()
-        if color not in mapping.keys():
-            mapping[color] = next(hatches)
-        bar.set_hatch(mapping[color])
-        bar.set_facecolor("black")
-        bar.set_edgecolor("white")
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.275), ncol=4, frameon=False)
-    sns.despine(left=True)
-    ax.grid(which="major", axis="y", linestyle="-")
-    return fig
-
-
 def format_thousands(value):
     return f"{value:,.0f}"
 
 
+def plot_dual_axis(shared_x, line_y, bar_y, df):
+    # Expects wide data
+    base = alt.Chart(df).encode(x=f"{shared_x}:T")
+    line = base.mark_line().encode(y=f"{line_y}:Q")
+    bar = base.mark_bar(size=5, color="gray", opacity=0.7).encode(y=f"{bar_y}:Q")
+    chart = alt.layer(line, bar).resolve_scale(y="independent")
+    return st.altair_chart(chart, use_container_width=True)
+
+
 def main():
     config = lookup_yaml("etl_config.yml")
-    df = pd.read_csv(config["transform"]["aggregate"]["output_path"])
-    for col in ["date", "week", "month"]:
-        df[col] = pd.to_datetime(df[col]).dt.date
-    if not max(df["date"]) >= datetime.date.today():
-        run_etl()
+    # TODO - Think of a clever way to gate this
+    run_etl()
     st.title("🏔 Review")
 
     goals = st.columns(2)
@@ -71,14 +44,12 @@ def main():
     with skiing:
         ski = pd.read_csv(config["transform"]["skis"]["output_path"])
         metrics = st.columns(5)
-        tour_count = ski.loc[ski["type"] == "backcountry_ski", "id"].count()
+        tour_count = ski.loc[ski["type"] == "backcountry_ski", "date"].nunique()
         alpine_vert = ski.loc[ski["type"] == "alpine_ski", "total_elevation_gain"].sum()
         alpine_count = ski.loc[ski["type"] == "alpine_ski", "id"].count()
 
         with metrics[0]:
-            st.metric(
-                label="Tour Sessions", value=format_thousands(tour_count), delta=None
-            )
+            st.metric(label="Tour Days", value=format_thousands(tour_count), delta=None)
         with metrics[1]:
             st.metric(
                 label="Max Speed",
@@ -87,7 +58,9 @@ def main():
             )
         with metrics[2]:
             st.metric(
-                label="Days", value=format_thousands(ski["date"].nunique()), delta=None,
+                label="Ski Days",
+                value=format_thousands(ski["date"].nunique()),
+                delta=None,
             )
         with metrics[3]:
             st.metric(
@@ -97,7 +70,7 @@ def main():
             )
         with metrics[4]:
             st.metric(
-                label="Elevation / Alpine Day",
+                label="Elevation / Alpine",
                 value=format_thousands(alpine_vert / alpine_count),
                 delta=None,
             )
@@ -107,51 +80,100 @@ def main():
             {"total_elevation_gain": "sum", "max_speed": "max"}
         )
         ski["season_elevation_gain"] = ski["total_elevation_gain"].cumsum().astype(int)
-
-        base = alt.Chart(ski).encode(x="date")
-        line = base.mark_line().encode(y="season_elevation_gain")
-        bar = base.mark_bar(size=5, color="gray", opacity=0.7).encode(y="max_speed")
-        chart = alt.layer(line, bar).resolve_scale(y="independent")
-        st.altair_chart(chart, use_container_width=True)
+        plot_dual_axis(
+            shared_x="date", line_y="season_elevation_gain", bar_y="max_speed", df=ski
+        )
 
     with spending:
         metrics = st.columns(3)
-        seven_trailing_days = datetime.date.today() - pd.DateOffset(weeks=1)
-        with metrics[2]:
-            variable_spending = df.loc[
-                df["date"] >= seven_trailing_days, "variable_spending"
-            ].sum()
+        spend = pd.read_csv(config["transform"]["transactions"]["output_path"])
+        trailing_week = datetime.date.today() - pd.DateOffset(weeks=1)
+        trailing_quarter = datetime.date.today() - pd.DateOffset(weeks=12)
+        spend["date"] = convert_vector_to_date(spend["date"])
+        with metrics[0]:
+            weekly_restaurant_spend = (
+                spend.loc[spend["date"] >= trailing_week]
+                .loc[spend["category"] == "restaurants", "amount"]
+                .sum()
+            )
+            quarterly_restaurant_spend = (
+                spend.loc[spend["date"] >= trailing_quarter,]
+                .loc[spend["category"] == "restaurants", "amount"]
+                .sum()
+            )
             st.metric(
-                label="Weekly Variable Spend",
-                value="$" + format_thousands(variable_spending),
-                delta=None,
+                label="Weekly Restaurant Spend",
+                value="$" + format_thousands(weekly_restaurant_spend),
+                delta=format_thousands(
+                    weekly_restaurant_spend - quarterly_restaurant_spend / 12
+                ),
+                delta_color="inverse",
             )
 
-        agg = df.groupby("week", as_index=False)["week", "variable_spending"].sum()
+        with metrics[1]:
+            weekly_variable_spend = (
+                spend.loc[spend["date"] >= trailing_week]
+                .loc[spend["is_variable"], "amount"]
+                .sum()
+            )
+            quarterly_variable_spend = (
+                spend.loc[spend["date"] >= trailing_quarter,]
+                .loc[spend["is_variable"], "amount"]
+                .sum()
+            )
+            st.metric(
+                label="Weekly Variable Spend",
+                value="$" + format_thousands(weekly_variable_spend),
+                delta=format_thousands(
+                    weekly_variable_spend - quarterly_variable_spend / 12
+                ),
+                delta_color="inverse",
+            )
+        with metrics[2]:
+            pass
+
+        # df.query('is_variable').groupby('date').sum()['amount'].rolling('30D').sum()
         st.altair_chart(
-            alt.Chart(agg)
+            alt.Chart(spend.loc[spend["is_variable"],])
             .mark_bar()
             .encode(
-                x=alt.X("week", scale=alt.Scale()),
-                y=alt.Y("variable_spending", scale=alt.Scale(zero=False)),
+                x=alt.X("week:T", scale=alt.Scale()),
+                y=alt.Y("amount", scale=alt.Scale(zero=False)),
+                color="category",
             ),
             use_container_width=True,
         )
-        spend = pd.read_csv(config["transform"]["transactions"]["output_path"])
-        spend["date"] = pd.to_datetime(spend["date"]).dt.date
-        spend = spend[["date", "name", "category", "amount"]]
+        spend = spend[["date", "name", "account", "category", "amount"]]
         spend["amount"] = spend["amount"].astype(int)
-        st.table(spend.head(50))
+        with st.expander("Transactions"):
+            st.table(spend.sort_values("date", ascending=False).head(50))
     with health:
-        # TODO - replace aggregate with resting_heart_rate?
-        st.altair_chart(
-            alt.Chart(df)
-            .mark_line()
-            .encode(
-                x=alt.X("date", scale=alt.Scale()),
-                y=alt.Y("resting_heart_rate", scale=alt.Scale(zero=False)),
-            ),
-            use_container_width=True,
+        metrics = st.columns(5)
+        vitals = pd.read_csv(config["transform"]["vitals"]["output_path"])
+        vitals["date"] = convert_vector_to_date(vitals["date"])
+        with metrics[0]:
+            last_heart_rate = (
+                vitals.sort_values("date")
+                .loc[vitals["type"] == "resting_heart_rate", "value"]
+                .iloc[0]
+            )
+            st.metric(
+                label="Resting Heart Rate", value=last_heart_rate,
+            )
+        with metrics[1]:
+            last_heart_rate = (
+                vitals.sort_values("date")
+                .loc[vitals["type"] == "sleep_hours", "value"]
+                .iloc[0]
+            )
+            st.metric(
+                label="Sleep Hours", value=last_heart_rate,
+            )
+        vitals = vitals.pivot_table(
+            values="value", index="date", columns="type"
+        ).reset_index()
+        plot_dual_axis(
+            shared_x="date", line_y="resting_heart_rate", bar_y="sleep_hours", df=vitals
         )
 
 

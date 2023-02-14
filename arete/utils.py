@@ -32,6 +32,15 @@ def convert_vector_to_date(vector):
     # return pd.to_datetime(vector).dt.date.astype("datetime64[ns]")
 
 
+def date_dimension_table(start, end):
+    df = pd.DataFrame({"date": pd.date_range(start, end, periods=None, freq="d")})
+    df["week"] = date_period_vector(df["date"], "W")
+    df["month"] = date_period_vector(df["date"], "M")
+    df["quarter"] = date_period_vector(df["date"], "Q")
+    df["date"] = convert_vector_to_date(df["date"].astype(str))
+    return df
+
+
 # TODO - This should be a class
 class CredsFile:
     def __init__(self, path):

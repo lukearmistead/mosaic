@@ -1,8 +1,7 @@
 extract:
   # This step pulls raw data from each resource
   fitbit:
-    # start_date: '2021-10-01'
-    start_date: '2023-01-01'
+    start_date: '2021-10-01'
     end_date: 'today'
     endpoints:
       activities/heart:
@@ -35,7 +34,7 @@ extract:
     creds_path: 'creds.yml'
     creds_key: 'plaid'
   splitwise:
-    start_date: '2023-01-01'
+    start_date: '2022-11-01'
     end_date: 'today'
     output_path: 'data/extract/splitwise/splitwise.csv'
     creds_path: 'creds.yml'
@@ -52,16 +51,11 @@ transform:
     start_date: '2022-11-01'
     end_date: '2023-06-01'
     output_path: 'data/transform/skis.csv'
-  resting_heart_rates:
+  vitals:
     start_date: '12 weeks ago'
     end_date: 'today'
-    output_path: 'data/transform/resting_heart_rates.csv'
+    output_path: 'data/transform/vitals.csv'
   transactions:
-    # start_date: '2022-03-16'
     start_date: '12 weeks ago'
     end_date: 'today'
     output_path: 'data/transform/transactions.csv'
-  aggregate:
-    start_date: '12 weeks ago'
-    end_date: 'today'
-    output_path: 'data/transform/aggregate.csv'
