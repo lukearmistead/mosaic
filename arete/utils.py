@@ -23,6 +23,10 @@ def snakecase_format(string):
     return inflection.underscore(string)
 
 
+def title_format(string):
+    return inflection.titleize(string)
+
+
 def convert_string_to_date(string):
     return dateparser.parse(string).date()
 

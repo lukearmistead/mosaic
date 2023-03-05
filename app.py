@@ -1,13 +1,14 @@
 from arete.etl import run_etl
 from arete.utils import convert_vector_to_date, lookup_yaml
 import altair as alt
+import datetime
+import inflection
 import logging as getLogger
-import streamlit as st
-import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import pandas as pd
 import seaborn as sns
-import datetime
+import streamlit as st
 
 
 getLogger.getLogger().setLevel(getLogger.INFO)
@@ -16,31 +17,40 @@ getLogger.getLogger().setLevel(getLogger.INFO)
 def format_thousands(value):
     return f"{value:,.0f}"
 
+def most_recent_value(long_df, category, category_col="type", value_col="value", date_col="date"):
+    # Expects long data
+    last_value = (
+        long_df.sort_values(date_col)
+        .loc[long_df[category_col] == category, value_col]
+        .dropna()
+        .iloc[-1]
+    )
+    return last_value
 
 def plot_dual_axis(shared_x, line_y, bar_y, df):
     # Expects wide data
     base = alt.Chart(df).encode(x=f"{shared_x}:T")
-    line = base.mark_line().encode(y=f"{line_y}:Q")
-    bar = base.mark_bar(size=5, color="gray", opacity=0.7).encode(y=f"{bar_y}:Q")
+    line = base.mark_line().encode(y=alt.Y(f"{line_y}:Q", scale=alt.Scale(zero=False)))
+    bar = base.mark_bar(size=5, color="gray", opacity=0.5).encode(y=f"{bar_y}:Q")
     chart = alt.layer(line, bar).resolve_scale(y="independent")
     return st.altair_chart(chart, use_container_width=True)
 
 
-def main():
-    config = lookup_yaml("etl_config.yml")
-    # TODO - Think of a clever way to gate this
-    run_etl()
-    st.title("🏔 Review")
-
-    goals = st.columns(2)
-    with goals[0]:
-        shasta = st.checkbox("Tour Shasta")
-    with goals[1]:
-        home = st.checkbox("Buy home")
+def write_goal_checklist(goals: list):
+    goal_cols = st.columns(len(goals))
+    for i, goal in enumerate(goals):
+        with goal_cols[i]:
+            shasta = st.checkbox(goal)
     st.write()
 
-    skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
 
+def main():
+    config = lookup_yaml("etl_config.yml")
+    # TODO - Think of a clever way to gate ETL run so it doesn't hit the request limit
+    run_etl()
+    st.title("🏔 Review")
+    write_goal_checklist(['Tour Shasta', 'Climb Serengeti', 'Buy home'])
+    skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
     with skiing:
         ski = pd.read_csv(config["transform"]["skis"]["output_path"])
         metrics = st.columns(5)
@@ -132,14 +142,19 @@ def main():
         with metrics[2]:
             pass
 
-        # df.query('is_variable').groupby('date').sum()['amount'].rolling('30D').sum()
+        weekly_variable_spend = (
+                spend
+                .loc[spend["is_variable"], ["week", "category", "amount"]]
+                .groupby(["week", "category"], as_index=False)
+                .sum()
+                )
         st.altair_chart(
-            alt.Chart(spend.loc[spend["is_variable"],])
+            alt.Chart(weekly_variable_spend)
             .mark_bar()
             .encode(
                 x=alt.X("week:T", scale=alt.Scale()),
-                y=alt.Y("amount", scale=alt.Scale(zero=False)),
-                color="category",
+                y=alt.Y("amount:Q", scale=alt.Scale(zero=False)),
+                color="category:N",
             ),
             use_container_width=True,
         )
@@ -148,27 +163,14 @@ def main():
         with st.expander("Transactions"):
             st.table(spend.sort_values("date", ascending=False).head(50))
     with health:
-        metrics = st.columns(5)
+        metric_values = ['resting_heart_rate', 'sleep_hours', 'weight', 'bmi']
+        metrics = st.columns(len(metric_values))
         vitals = pd.read_csv(config["transform"]["vitals"]["output_path"])
         vitals["date"] = convert_vector_to_date(vitals["date"])
-        with metrics[0]:
-            last_heart_rate = (
-                vitals.sort_values("date")
-                .loc[vitals["type"] == "resting_heart_rate", "value"]
-                .iloc[0]
-            )
-            st.metric(
-                label="Resting Heart Rate", value=last_heart_rate,
-            )
-        with metrics[1]:
-            last_heart_rate = (
-                vitals.sort_values("date")
-                .loc[vitals["type"] == "sleep_hours", "value"]
-                .iloc[0]
-            )
-            st.metric(
-                label="Sleep Hours", value=last_heart_rate,
-            )
+        for i, value in enumerate(metric_values):
+            with metrics[i]:
+                last_value = f"{most_recent_value(vitals,value):.1f}"
+                st.metric(label=inflection.titleize(value), value=last_value)
         vitals = vitals.pivot_table(
             values="value", index="date", columns="type"
         ).reset_index()
