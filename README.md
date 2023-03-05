@@ -1,3 +1,11 @@
-A tool supporting data-driven reflection. Arete pulls data from a variety of sources and summarizes it for self reviews.
+Arete enables data-driven reflection by pulling and visualizing personal data from a variety of sources. So far, Arete supports:
+- Fitbit
+- Plaid
+- Splitwise
+- Strava
 
-To get access tokens from Plaid, follow this tutorial: https://youtu.be/sGBvKDGgPjc
+### Plaid
+
+- [Get API Keys](https://dashboard.plaid.com/overview)
+- [Use Plaid Quickstart to get access keys](https://plaid.com/docs/transactions/quickstart/#run-the-quickstart-app)
+- [Video Tutorial](https://youtu.be/sGBvKDGgPjc)
