@@ -17,7 +17,10 @@ getLogger.getLogger().setLevel(getLogger.INFO)
 def format_thousands(value):
     return f"{value:,.0f}"
 
-def most_recent_value(long_df, category, category_col="type", value_col="value", date_col="date"):
+
+def most_recent_value(
+    long_df, category, category_col="type", value_col="value", date_col="date"
+):
     # Expects long data
     last_value = (
         long_df.sort_values(date_col)
@@ -26,6 +29,7 @@ def most_recent_value(long_df, category, category_col="type", value_col="value",
         .iloc[-1]
     )
     return last_value
+
 
 def plot_dual_axis(shared_x, line_y, bar_y, df):
     # Expects wide data
@@ -49,7 +53,7 @@ def main():
     # TODO - Think of a clever way to gate ETL run so it doesn't hit the request limit
     run_etl()
     st.title("🏔 Review")
-    write_goal_checklist(['Tour Shasta', 'Climb Serengeti', 'Buy home'])
+    write_goal_checklist(["Tour Shasta", "Climb Serengeti", "Buy home"])
     skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
     with skiing:
         ski = pd.read_csv(config["transform"]["skis"]["output_path"])
@@ -143,11 +147,10 @@ def main():
             pass
 
         weekly_variable_spend = (
-                spend
-                .loc[spend["is_variable"], ["week", "category", "amount"]]
-                .groupby(["week", "category"], as_index=False)
-                .sum()
-                )
+            spend.loc[spend["is_variable"], ["week", "category", "amount"]]
+            .groupby(["week", "category"], as_index=False)
+            .sum()
+        )
         st.altair_chart(
             alt.Chart(weekly_variable_spend)
             .mark_bar()
@@ -163,7 +166,7 @@ def main():
         with st.expander("Transactions"):
             st.table(spend.sort_values("date", ascending=False).head(50))
     with health:
-        metric_values = ['resting_heart_rate', 'sleep_hours', 'weight', 'bmi']
+        metric_values = ["resting_heart_rate", "sleep_hours", "weight", "bmi"]
         metrics = st.columns(len(metric_values))
         vitals = pd.read_csv(config["transform"]["vitals"]["output_path"])
         vitals["date"] = convert_vector_to_date(vitals["date"])

@@ -15,7 +15,7 @@ CONFIG_PATH, CREDS_PATH = "etl_config.yml", "creds.yml"
 
 class LastRun:
     def __init__(self):
-        self._env_var = 'ARETE_LAST_ETL_RUN_DATE'
+        self._env_var = "ARETE_LAST_ETL_RUN_DATE"
         self._today = self._today()
 
     def _today(self):
