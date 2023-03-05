@@ -31,6 +31,8 @@ extract:
         output_path: 'data/extract/plaid/chase.csv'
       capital_one:
         output_path: 'data/extract/plaid/capital_one.csv'
+      barclays:
+        output_path: 'data/extract/plaid/barclays.csv'
     creds_path: 'creds.yml'
     creds_key: 'plaid'
   splitwise:

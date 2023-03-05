@@ -27,6 +27,7 @@ general:
       - 'Microsoft*Store'
       - 'CSC SERVICEWORK'
       - 'KAHOOT! ASA'
+      - 'EYECONIC INC'
     original_description:
     personal_finance_category:
       primary:
@@ -155,6 +156,7 @@ restaurants:
   plaid:
     transaction_id:
     name:
+      - 'HOTEL MIDTOWN R&B OUTL'
       - 'ALPINE MEADOWS FOOD AND B'
       - 'CHURCH KEY'
       - 'TAHOE FULL* TAHOE FULL'
