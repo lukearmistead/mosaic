@@ -1,3 +1,4 @@
+import os, datetime
 from arete.extract.fitbit import extract_fitbit
 from arete.extract.plaid import extract_plaid
 from arete.extract.splitwise import extract_splitwise
@@ -12,6 +13,24 @@ from arete.utils import lookup_yaml, convert_string_to_date
 CONFIG_PATH, CREDS_PATH = "etl_config.yml", "creds.yml"
 
 
+class LastRun:
+    def __init__(self):
+        self._env_var = 'ARETE_LAST_ETL_RUN_DATE'
+        self._today = self._today()
+
+    def _today(self):
+        return str(datetime.date.today())
+
+    def read(self):
+        return os.environ.get(self._env_var)
+
+    def update(self):
+        os.environ[self._env_var] = self._today
+
+    def was_today(self):
+        return self.read() == self._today
+
+
 def convert_all_dates(
     config, date_keys=["start_date", "end_date"], steps=["extract", "transform"]
 ):
@@ -23,6 +42,9 @@ def convert_all_dates(
 
 
 def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
+    last_run = LastRun()
+    if last_run.was_today():
+        return
     config = lookup_yaml(config_path)
     # Strava expects dates as strings, so we run this before the conversion step
     extract_strava(**config["extract"]["strava"])
@@ -56,3 +78,5 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
         extract_splitwise_path=config["extract"]["splitwise"]["output_path"],
         **config["transform"]["transactions"],
     )
+
+    last_run.update()
