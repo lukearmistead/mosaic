@@ -80,12 +80,6 @@ def update_yaml(path: str, new_entry: dict):
     write_yaml(path, updated_entries)
 
 
-def yaml_lookup(path: str, key: str) -> dict:
-    "For backwards compatability"
-    print(path + "/" + key)
-    return lookup_yaml(path + "/" + key)
-
-
 class Creds:
     def __init__(self, creds_path, creds_key):
         """ TODO
