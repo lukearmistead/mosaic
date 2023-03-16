@@ -21,13 +21,14 @@ general:
       - 'ATM Withdrawal'
       - 'ATM Intl. Fee'
       - 'ANTI-CORP'
+      - 'BUREAU OF ACCOUNT MANAGEM'
       - 'CALIFORNIA COWBOY'
       - 'CAPITAL ONE MEMBER FEE'
-      - 'BUREAU OF ACCOUNT MANAGEM'
-      - 'Microsoft*Store'
       - 'CSC SERVICEWORK'
-      - 'KAHOOT! ASA'
       - 'EYECONIC INC'
+      - 'KAHOOT! ASA'
+      - 'Google Cloud Storage'
+      - 'Microsoft*Store'
     original_description:
     personal_finance_category:
       primary:
@@ -156,6 +157,8 @@ restaurants:
   plaid:
     transaction_id:
     name:
+      - 'THE ALE APOTHECARY -'
+      - 'JOHNNY G?S SUBSHACK B'
       - 'HOTEL MIDTOWN R&B OUTL'
       - 'ALPINE MEADOWS FOOD AND B'
       - 'CHURCH KEY'
