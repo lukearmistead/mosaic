@@ -4,10 +4,7 @@ import altair as alt
 import datetime
 import inflection
 import logging as getLogger
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import pandas as pd
-import seaborn as sns
 import streamlit as st
 
 
@@ -44,7 +41,7 @@ def write_goal_checklist(goals: list):
     goal_cols = st.columns(len(goals))
     for i, goal in enumerate(goals):
         with goal_cols[i]:
-            shasta = st.checkbox(goal)
+            st.checkbox(goal)
     st.write()
 
 
@@ -101,8 +98,12 @@ def main():
     with spending:
         metrics = st.columns(3)
         spend = pd.read_csv(config["transform"]["transactions"]["output_path"])
-        trailing_week = datetime.date.today() - pd.DateOffset(weeks=1)
-        trailing_quarter = datetime.date.today() - pd.DateOffset(weeks=12)
+        trailing_week = pd.to_datetime(
+            datetime.date.today() - pd.DateOffset(weeks=1)
+        ).date()
+        trailing_quarter = pd.to_datetime(
+            datetime.date.today() - pd.DateOffset(weeks=12)
+        ).date()
         spend["date"] = convert_vector_to_date(spend["date"])
         with metrics[0]:
             weekly_restaurant_spend = (

@@ -8,7 +8,6 @@ _site
 creds.yml
 *.csv
 *.feather
-data/*
 .idea/*
 notebooks/*
 *debug*

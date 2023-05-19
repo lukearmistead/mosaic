@@ -24,14 +24,11 @@ def map_category(category_rules, expense):
 
 
 def extract_splitwise(
-    creds_path, creds_key, start_date, end_date, output_path,
+    creds, start_date, end_date, output_path,
 ):
-    creds = lookup_yaml(creds_path)[creds_key]
 
     # https://splitwise.readthedocs.io/en/latest/user/authenticate.html#api-key
-    client = Splitwise(
-        creds["consumer_key"], creds["consumer_secret"], api_key=creds["api_key"]
-    )
+    client = Splitwise(consumer_key=creds["client_id"], consumer_secret=creds["client_secret"], oauth2_access_token={"access_token": creds["access_token"]})
     my_user_id = client.getCurrentUser().id
     expenses = client.getExpenses(limit=False)
     groups = client.getGroups()
