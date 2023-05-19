@@ -2,14 +2,17 @@ altair
 dateparser
 cherrypy
 fitbit
+flask
 inflection
 matplotlib
 numpy
 pandas
+pandasql
 prettytable
 plaid-python
 pyaml
 oauthlib==2.1.0
+ratelimit
 requests-oauthlib==1.1.0
 seaborn
 splitwise

@@ -16,8 +16,6 @@ extract:
         output_path: 'data/extract/fitbit/bmis.csv'
       sleep:
         output_path: 'data/extract/fitbit/sleeps.csv'
-    creds_path: 'creds.yml'
-    creds_key: 'fitbit'
   plaid:
     # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
     # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
@@ -33,20 +31,14 @@ extract:
         output_path: 'data/extract/plaid/capital_one.csv'
       barclays:
         output_path: 'data/extract/plaid/barclays.csv'
-    creds_path: 'creds.yml'
-    creds_key: 'plaid'
   splitwise:
     start_date: '2022-11-01'
     end_date: 'today'
     output_path: 'data/extract/splitwise/splitwise.csv'
-    creds_path: 'creds.yml'
-    creds_key: 'splitwise'
   strava:
     start_date: '2021-10-01'
     end_date: 'today' # This actually isn't configurable. StravaIO just extracts up to the present day
     output_path: 'data/extract/strava/activities.csv'
-    creds_path: 'creds.yml'
-    creds_key: 'strava'
 transform:
   skis:
     # Start and end of the season

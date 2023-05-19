@@ -138,9 +138,8 @@ class TransactionCategorizer:
 
 
 def extract_plaid(
-    creds_path, creds_key, start_date, end_date, endpoints,
+    creds, start_date, end_date, endpoints,
 ):
-    creds = lookup_yaml(creds_path)[creds_key]
     client = get_client(creds["client_id"], creds["client_secret"])
     for account, config in endpoints.items():
         access_token = creds[account]["access_token"]

@@ -1,9 +1,7 @@
-from datetime import datetime, timedelta
-from io import StringIO
+from datetime import timedelta
 import logging as getLogger
 import fitbit
 import pandas as pd
-from arete.utils import Creds, lookup_yaml
 
 """
 - Create directories if they don't exist
@@ -68,23 +66,22 @@ def unload_fitbit_payload(raw_json_extract, resource, key):
 def hit_api(client, resource, start_date, end_date):
     days_requested = (end_date - start_date).days
     if days_requested > 100:
-
-        working_end_date = start_date + timedelta(days=100)
-    raw_json_extract = client.time_series(
-        resource, base_date=start_date, end_date=end_date
-    )
+        start_date + timedelta(days=100)
+    client.time_series(resource, base_date=start_date, end_date=end_date)
 
 
 def extract_fitbit(
-    start_date, end_date, creds_path, creds_key, endpoints,
+    creds,
+    start_date,
+    end_date,
+    endpoints,
 ):
-    creds = Creds(creds_path, creds_key)
     client = fitbit.Fitbit(
-        client_id=creds.client_id,
-        client_secret=creds.client_secret,
-        access_token=creds.access_token,
-        refresh_token=creds.refresh_token,
-        expires_at=creds.expires_at,
+        client_id=creds["client_id"],
+        client_secret=creds["client_secret"],
+        access_token=creds["access_token"],
+        refresh_token=creds["refresh_token"],
+        expires_at=creds["expires_at"],
     )
     for resource, config in endpoints.items():
         key = resource.replace("/", "-")

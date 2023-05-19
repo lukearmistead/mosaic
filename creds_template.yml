@@ -1,0 +1,26 @@
+strava:
+  client_id: YOUR_CLIENT_ID
+  client_secret: YOUR_CLIENT_SECRET
+  authorization_uri: https://www.strava.com/api/v3/oauth/authorize
+  token_uri: https://www.strava.com/api/v3/oauth/token
+  scope: activity:read_all
+splitwise:
+  client_id: YOUR_CLIENT_ID
+  client_secret: YOUR_CLIENT_SECRET
+  authorization_uri: https://secure.splitwise.com/oauth/authorize
+  token_uri: https://secure.splitwise.com/oauth/token
+fitbit:
+  client_id: YOUR_CLIENT_ID
+  client_secret: YOUR_CLIENT_SECRET
+  authorization_uri: https://api.fitbit.com/oauth2/authorize
+  token_uri: https://api.fitbit.com/oauth2/token
+  scope:  activity heartrate nutrition oxygen_saturation respiratory_rate settings sleep temperature weight
+plaid:
+  client_id: YOUR_CLIENT_ID
+  client_secret: YOUR_CLIENT_SECRET
+  authorization_uri: https://link.plaid.com/api/link/v2/credentials/
+  token_uri: https://link.plaid.com/api/link/v2/tokens/
+  your_account:
+    access_token: YOUR_ACCESS TOKEN
+  your_second_account:
+    access_token: YOUR_ACCESS TOKEN

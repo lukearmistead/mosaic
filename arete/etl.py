@@ -1,15 +1,13 @@
 import os, datetime
-from arete.extract.fitbit import extract_fitbit
 from arete.extract.plaid import extract_plaid
-from arete.extract.splitwise import extract_splitwise
 from arete.extract.strava import extract_strava
 from arete.transform.skis import transform_skis
 from arete.transform.vitals import transform_vitals
 from arete.transform.transactions import transform_transactions
 from arete.utils import lookup_yaml, convert_string_to_date
+from arete.credentials import AccessTokenManager, CredsFile
 
 
-# TODO - Should the ETL step handle the creds instead of the individual extracts?
 CONFIG_PATH, CREDS_PATH = "etl_config.yml", "creds.yml"
 
 
@@ -41,32 +39,34 @@ def convert_all_dates(
     return config
 
 
+def get_refreshed_creds(key, creds_file):
+    access_token_manager = AccessTokenManager(creds_file)
+    access_token_manager.refresh(key)
+    return creds_file.get(key)
+
+
 def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
     last_run = LastRun()
     if last_run.was_today():
         return
     config = lookup_yaml(config_path)
-    # Strava expects dates as strings, so we run this before the conversion step
-    extract_strava(**config["extract"]["strava"])
+    creds_file = CredsFile(CREDS_PATH)
+    # Extracts
+    # TODO - Create data directories if they don't exist
     convert_all_dates(config)
-    # TODO - Figure out a way to remove the clunky python-fitbit part of the module
-    extract_fitbit(**config["extract"]["fitbit"])
-    extract_plaid(**config["extract"]["plaid"])
+    for source in ["strava", "fitbit", "splitwise"]:
+        creds = get_refreshed_creds(source, creds_file)
+        extract_strava(creds, **config["extract"][source])
+    extract_plaid(creds_file.get("plaid"), **config["extract"]["plaid"])
+
+    # Transforms
     # TODO - Set up the start and end
-    extract_splitwise(**config["extract"]["splitwise"])
+    endpoints = config["extract"]["fitbit"]["endpoints"]
     transform_vitals(
-        extract_fitbit_hearts_path=config["extract"]["fitbit"]["endpoints"][
-            "activities/heart"
-        ]["output_path"],
-        extract_fitbit_sleeps_path=config["extract"]["fitbit"]["endpoints"]["sleep"][
-            "output_path"
-        ],
-        extract_fitbit_weights_path=config["extract"]["fitbit"]["endpoints"][
-            "body/weight"
-        ]["output_path"],
-        extract_fitbit_bmis_path=config["extract"]["fitbit"]["endpoints"]["body/bmi"][
-            "output_path"
-        ],
+        extract_fitbit_hearts_path=endpoints["activities/heart"]["output_path"],
+        extract_fitbit_sleeps_path=endpoints["sleep"]["output_path"],
+        extract_fitbit_weights_path=endpoints["body/weight"]["output_path"],
+        extract_fitbit_bmis_path=endpoints["body/bmi"]["output_path"],
         **config["transform"]["vitals"],
     )
     transform_skis(
