@@ -3,7 +3,9 @@ import dateparser
 import inflection
 import logging
 import pandas as pd
+import os
 import yaml
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,7 +27,12 @@ def convert_string_to_date(string):
 
 def convert_vector_to_date(vector):
     return vector.map(convert_string_to_date)
-    # return pd.to_datetime(vector).dt.date.astype("datetime64[ns]")
+
+
+def create_path_to_file_if_not_exists(full_path):
+    directory_path = os.path.dirname(full_path)
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
 
 
 def date_dimension_table(start, end):
@@ -41,28 +48,6 @@ def lookup_yaml(path: str) -> dict:
     """Returns a dictionary containing the credentials relevant for a particular API, generally including a  client id and secret"""
     with open(path, "r") as stream:
         return yaml.safe_load(stream)
-
-
-def write_yaml(path: str, entries: dict):
-    with open(path, "w") as stream:
-        # Careful, this rewrites the entire yaml file
-        yaml.safe_dump(entries, stream)
-
-
-def deep_update(d, u):
-    # https://stackoverflow.com/questions/3232943/update-value-of-a-nested-dictionary-of-varying-depth
-    for k, v in u.items():
-        if isinstance(v, collections.abc.Mapping):
-            d[k] = deep_update(d.get(k, {}), v)
-        else:
-            d[k] = v
-    return d
-
-
-def update_yaml(path: str, new_entry: dict):
-    entries = lookup_yaml(path)
-    updated_entries = deep_update(entries, new_entry)
-    write_yaml(path, updated_entries)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,12 @@ import inflection
 import logging as getLogger
 import pandas as pd
 from datetime import datetime
-from arete.utils import convert_vector_to_date, snakecase_format
+from arete.utils import (
+    convert_vector_to_date,
+    snakecase_format,
+    create_path_to_file_if_not_exists,
+)
+
 
 getLogger.getLogger().setLevel(getLogger.INFO)
 
@@ -25,12 +30,22 @@ def transform_skis(start_date, end_date, extract_strava_path, output_path):
     df = (
         df.loc[df["date"].between(start_date, end_date),]
         .loc[df["type"].isin(["backcountry_ski", "alpine_ski", "snowboard"]),]
-        .loc[:, ["id", "date", "type", "total_elevation_gain", "max_speed",]]
+        .loc[
+            :,
+            [
+                "id",
+                "date",
+                "type",
+                "total_elevation_gain",
+                "max_speed",
+            ],
+        ]
         .sort_values("date")
     )
     getLogger.info(
         f"Outputting ski data between {start_date} and {end_date} to {output_path}:\n{df.head()}"
     )
+    create_path_to_file_if_not_exists(output_path)
     df.to_csv(output_path)
 
 

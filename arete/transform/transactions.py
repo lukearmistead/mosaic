@@ -1,4 +1,8 @@
-from arete.utils import convert_vector_to_date, convert_string_to_date
+from arete.utils import (
+    convert_vector_to_date,
+    convert_string_to_date,
+    create_path_to_file_if_not_exists,
+)
 from prettytable import PrettyTable, PLAIN_COLUMNS
 import ast
 import logging as getLogger
@@ -148,6 +152,7 @@ def transform_transactions(
     plaid["month"] = date_period_vector(plaid["date"], "M")
 
     getLogger.info(f"Saving processed data to {output_path}\n{plaid.info()}")
+    create_path_to_file_if_not_exists(output_path)
     plaid.to_csv(output_path, index=False)
 
 

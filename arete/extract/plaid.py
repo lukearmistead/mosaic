@@ -12,7 +12,7 @@ from plaid.model.item_public_token_exchange_request import (
 )
 from ratelimit import limits, sleep_and_retry
 import time
-from arete.utils import lookup_yaml
+from arete.utils import lookup_yaml, create_path_to_file_if_not_exists
 
 
 pd.options.display.max_columns = None
@@ -23,7 +23,10 @@ getLogger.getLogger().setLevel(getLogger.DEBUG)
 def get_client(client_id, client_secret):
     configuration = plaid.Configuration(
         host=plaid.Environment.Development,
-        api_key={"clientId": client_id, "secret": client_secret,},
+        api_key={
+            "clientId": client_id,
+            "secret": client_secret,
+        },
     )
     api_client = plaid.ApiClient(configuration)
     client = plaid_api.PlaidApi(api_client)
@@ -32,7 +35,9 @@ def get_client(client_id, client_secret):
 
 class TransactionsFetcher:
     def __init__(
-        self, client, access_token,
+        self,
+        client,
+        access_token,
     ):
         self.client = client
         self.access_token = access_token
@@ -43,7 +48,9 @@ class TransactionsFetcher:
     @sleep_and_retry
     @limits(calls=30, period=60)
     def _fetch_request_handler(
-        self, start_date, end_date,
+        self,
+        start_date,
+        end_date,
     ):
         request = TransactionsGetRequest(
             access_token=self.access_token,
@@ -61,7 +68,9 @@ class TransactionsFetcher:
         return response.to_dict()
 
     def fetch(
-        self, start_date, end_date,
+        self,
+        start_date,
+        end_date,
     ):
         transactions = []
         still_more_transactions = True
@@ -138,7 +147,10 @@ class TransactionCategorizer:
 
 
 def extract_plaid(
-    creds, start_date, end_date, endpoints,
+    creds,
+    start_date,
+    end_date,
+    endpoints,
 ):
     client = get_client(creds["client_id"], creds["client_secret"])
     for account, config in endpoints.items():
@@ -181,4 +193,5 @@ def extract_plaid(
         )
         getLogger.debug(df.head())
         getLogger.debug(df.info())
+        create_path_to_file_if_not_exists(config["output_path"])
         df.to_csv(config["output_path"], index=False)

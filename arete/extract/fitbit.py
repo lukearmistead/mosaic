@@ -2,6 +2,7 @@ from datetime import timedelta
 import logging as getLogger
 import fitbit
 import pandas as pd
+from arete.utils import create_path_to_file_if_not_exists
 
 """
 - Create directories if they don't exist
@@ -101,4 +102,5 @@ def extract_fitbit(
             more_data_to_extract = working_end_date < end_date
             working_start_date = working_end_date + timedelta(days=1)
             working_end_date = min((working_start_date + timedelta(days=100)), end_date)
+        create_path_to_file_if_not_exists(config["output_path"])
         pd.concat(dfs, axis=0).to_csv(config["output_path"], index=False)

@@ -3,7 +3,7 @@ import logging as getLogger
 import pandas as pd
 import requests
 from splitwise import Splitwise
-from arete.utils import lookup_yaml
+from arete.utils import lookup_yaml, create_path_to_file_if_not_exists
 
 
 getLogger.getLogger().setLevel(getLogger.INFO)
@@ -24,11 +24,17 @@ def map_category(category_rules, expense):
 
 
 def extract_splitwise(
-    creds, start_date, end_date, output_path,
+    creds,
+    start_date,
+    end_date,
+    output_path,
 ):
-
     # https://splitwise.readthedocs.io/en/latest/user/authenticate.html#api-key
-    client = Splitwise(consumer_key=creds["client_id"], consumer_secret=creds["client_secret"], oauth2_access_token={"access_token": creds["access_token"]})
+    client = Splitwise(
+        consumer_key=creds["client_id"],
+        consumer_secret=creds["client_secret"],
+        oauth2_access_token={"access_token": creds["access_token"]},
+    )
     my_user_id = client.getCurrentUser().id
     expenses = client.getExpenses(limit=False)
     groups = client.getGroups()
@@ -75,4 +81,5 @@ def extract_splitwise(
     df = pd.DataFrame(unpacked_expenses)
     getLogger.info(df.head())
     getLogger.info(df.info())
+    create_path_to_file_if_not_exists(output_path)
     df.to_csv(output_path, index=False)

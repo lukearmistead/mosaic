@@ -1,5 +1,7 @@
 import os, datetime
 from arete.extract.plaid import extract_plaid
+from arete.extract.fitbit import extract_fitbit
+from arete.extract.splitwise import extract_splitwise
 from arete.extract.strava import extract_strava
 from arete.transform.skis import transform_skis
 from arete.transform.vitals import transform_vitals
@@ -51,12 +53,14 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
         return
     config = lookup_yaml(config_path)
     creds_file = CredsFile(CREDS_PATH)
+
     # Extracts
-    # TODO - Create data directories if they don't exist
     convert_all_dates(config)
-    for source in ["strava", "fitbit", "splitwise"]:
+    sources = ["strava", "fitbit", "splitwise"]
+    steps = [extract_strava, extract_fitbit, extract_splitwise]
+    for source, step in zip(sources, steps):
         creds = get_refreshed_creds(source, creds_file)
-        extract_strava(creds, **config["extract"][source])
+        step(creds, **config["extract"][source])
     extract_plaid(creds_file.get("plaid"), **config["extract"]["plaid"])
 
     # Transforms

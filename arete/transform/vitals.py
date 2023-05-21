@@ -1,6 +1,6 @@
 import logging as getLogger
 import pandas as pd
-from arete.utils import convert_vector_to_date
+from arete.utils import convert_vector_to_date, create_path_to_file_if_not_exists
 
 
 def transform_fitbit_extract(input_path, date_col, value_col, value_name):
@@ -54,6 +54,7 @@ def transform_vitals(
         transformed_fitbit_extracts.append(transformed_extract)
     df = pd.concat(transformed_fitbit_extracts)
     df.loc[df["type"] == "sleep_hours", "value"] /= 60
+    create_path_to_file_if_not_exists(output_path)
     (
         df.loc[df["date"].between(start_date, end_date),]
         .loc[:, ["date", "type", "value"]]
