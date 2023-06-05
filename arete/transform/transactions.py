@@ -1,7 +1,6 @@
 from arete.utils import (
     convert_vector_to_date,
     convert_string_to_date,
-    create_path_to_file_if_not_exists,
 )
 from prettytable import PrettyTable, PLAIN_COLUMNS
 import ast
@@ -54,8 +53,8 @@ TRANSACTIONS_WITHOUT_VENMO_PAYMENTS_FROM_ASPIRATION_TO_SPLITWISE = f"""
     select plaid.*
       from plaid
            left join ({VENMO_PAYMENTS_FROM_ASPIRATION_TO_SPLITWISE}) as payments
-                on payments.transaction_id = plaid.transaction_id
-     where payments.transaction_id isnull
+                on payments.id = plaid.id
+     where payments.id isnull
     """
 TRANSACTIONS_WITH_VENMO_INCOME_NET_OF_SPLITWISE_BALANCE = read_query(
     f"{transform_dir}venmo_income_net_of_splitwise_balance.sql"
@@ -86,7 +85,7 @@ def transform_transactions(
         "Je3vNdZXRVU3oaOPP6p5tKz5zyDyneiqRDrrA",
         "gvX3p6KMaeIgJB9ZZ3aXSmx8JDoxXDi3yqnVN",
     ]
-    is_shared_payment = plaid["transaction_id"].isin(shared_transaction_examples)
+    is_shared_payment = plaid["id"].isin(shared_transaction_examples)
     plaid["amount"] = verbose_query(
         plaid, splitwise, TRANSACTIONS_WITH_VENMO_INCOME_NET_OF_SPLITWISE_BALANCE
     )
@@ -112,7 +111,7 @@ def transform_transactions(
     someone_else_paid = splitwise["paid_share"] == 0
     not_repayment = ~splitwise["is_payment"]
     split_transactions = splitwise.rename(
-        columns={"id": "transaction_id", "description": "name", "owed_share": "amount"}
+        columns={"description": "name", "owed_share": "amount"}
     )
     # TODO - Is this helping?
     within_capital_one_window = convert_vector_to_date(splitwise["date"]).between(
@@ -152,7 +151,6 @@ def transform_transactions(
     plaid["month"] = date_period_vector(plaid["date"], "M")
 
     getLogger.info(f"Saving processed data to {output_path}\n{plaid.info()}")
-    create_path_to_file_if_not_exists(output_path)
     plaid.to_csv(output_path, index=False)
 
 

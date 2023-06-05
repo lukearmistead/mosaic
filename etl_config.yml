@@ -2,48 +2,146 @@ extract:
   # This step pulls raw data from each resource
   fitbit:
     start_date: '2021-10-01'
+    # start_date: '2023-05-01'
     end_date: 'today'
     endpoints:
       activities/heart:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          Fat Burn: 'float64'
+          Cardio: 'float64'
+          Peak: 'float64'
+          restingHeartRate: 'float64'
         output_path: 'data/extract/fitbit/hearts.csv'
       activities/distance:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          value: 'float64'
         output_path: 'data/extract/fitbit/distances.csv'
       body/weight:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          value: 'float64'
         output_path: 'data/extract/fitbit/weights.csv'
       body/fat:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          value: 'float64'
         output_path: 'data/extract/fitbit/fats.csv'
       body/bmi:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          value: 'float64'
         output_path: 'data/extract/fitbit/bmis.csv'
       sleep:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          startTime: 'datetime64[ns]'
+          endTime: 'datetime64[ns]'
+          efficiency: 'float64'
+          minutesAsleep: 'float64'
+          awakeningsCount: 'float64'
         output_path: 'data/extract/fitbit/sleeps.csv'
   plaid:
     # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
     # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
     start_date: '2022-03-16'
+    # start_date: '2023-05-01'
     end_date: 'today'
     endpoints:
       # Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
       aspiration:
+        output_schema:
+          id: 'object'
+          name: 'object'
+          date: 'datetime64[ns]'
+          category: 'object'
+          merchant_name: 'object'
+          account: 'object'
+          amount: 'float64'
         output_path: 'data/extract/plaid/aspiration.csv'
       chase:
+        output_schema:
+          id: 'object'
+          name: 'object'
+          date: 'datetime64[ns]'
+          category: 'object'
+          merchant_name: 'object'
+          account: 'object'
+          amount: 'float64'
         output_path: 'data/extract/plaid/chase.csv'
       capital_one:
+        output_schema:
+          id: 'object'
+          name: 'object'
+          date: 'datetime64[ns]'
+          category: 'object'
+          merchant_name: 'object'
+          account: 'object'
+          amount: 'float64'
         output_path: 'data/extract/plaid/capital_one.csv'
       barclays:
+        output_schema:
+          id: 'object'
+          name: 'object'
+          date: 'datetime64[ns]'
+          category: 'object'
+          merchant_name: 'object'
+          account: 'object'
+          amount: 'float64'
         output_path: 'data/extract/plaid/barclays.csv'
   splitwise:
     start_date: '2022-11-01'
+    # start_date: '2023-05-01'
     end_date: 'today'
-    output_path: 'data/extract/splitwise/splitwise.csv'
+    endpoints:
+      expenses:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          description: 'object'
+          is_payment: 'bool'
+          cost: 'float64'
+          category: 'object'
+          user_names: 'object'
+          net_balance: 'float64'
+          paid_share: 'float64'
+          owed_share: 'float64'
+          group_id: 'float64' # Float to accommodate null values
+          group_name: 'object'
+        output_path: 'data/extract/splitwise/expenses.csv'
   strava:
     start_date: '2021-10-01'
+    # start_date: '2023-05-01'
     end_date: 'today' # This actually isn't configurable. StravaIO just extracts up to the present day
-    output_path: 'data/extract/strava/activities.csv'
+    endpoints:
+      activities:
+        output_schema:
+          id: 'int64'
+          date: 'datetime64[ns]'
+          start_date: 'datetime64[ns, UTC]'
+          name: 'object'
+          type: 'object'
+          distance: 'float64'
+          moving_time: 'int64'
+          elapsed_time: 'int64'
+          total_elevation_gain: 'float64'
+          elev_high: 'float64'
+          elev_low: 'float64'
+          average_speed: 'float64'
+          max_speed: 'float64'
+        output_path: 'data/extract/strava/activities.csv'
 transform:
   skis:
     # Start and end of the season
     start_date: '2022-11-01'
-    end_date: '2023-06-01'
+    end_date: '2023-07-05'
     output_path: 'data/transform/skis.csv'
   vitals:
     start_date: '12 weeks ago'
