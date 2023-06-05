@@ -1,4 +1,4 @@
-select plaid.transaction_id,
+select plaid.id,
        plaid.name,
        plaid.date,
        coalesce(splitwise.category, plaid.category) as category,

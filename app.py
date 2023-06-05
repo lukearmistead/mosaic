@@ -4,6 +4,7 @@ import altair as alt
 import datetime
 import inflection
 import logging as getLogger
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -44,10 +45,11 @@ def write_goal_checklist(goals: list):
             st.checkbox(goal)
     st.write()
 
+def trailing_date(weeks):
+    return np.datetime64('today') - np.timedelta64(weeks, 'W')
 
 def main():
     config = lookup_yaml("etl_config.yml")
-    # TODO - Think of a clever way to gate ETL run so it doesn't hit the request limit
     run_etl()
     st.title("🏔 Review")
     write_goal_checklist(["Tour Shasta", "Climb Serengeti", "Buy home"])
@@ -98,12 +100,8 @@ def main():
     with spending:
         metrics = st.columns(3)
         spend = pd.read_csv(config["transform"]["transactions"]["output_path"])
-        trailing_week = pd.to_datetime(
-            datetime.date.today() - pd.DateOffset(weeks=1)
-        ).date()
-        trailing_quarter = pd.to_datetime(
-            datetime.date.today() - pd.DateOffset(weeks=12)
-        ).date()
+        trailing_week = trailing_date(weeks=1)
+        trailing_quarter = trailing_date(weeks=12)
         spend["date"] = convert_vector_to_date(spend["date"])
         with metrics[0]:
             weekly_restaurant_spend = (

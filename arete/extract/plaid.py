@@ -12,7 +12,7 @@ from plaid.model.item_public_token_exchange_request import (
 )
 from ratelimit import limits, sleep_and_retry
 import time
-from arete.utils import lookup_yaml, create_path_to_file_if_not_exists
+from arete.utils import lookup_yaml
 
 
 pd.options.display.max_columns = None
@@ -60,6 +60,7 @@ class TransactionsFetcher:
         )
         try:
             response = self.client.transactions_get(request)
+        # TODO - Improve error handling so that this only sleeps if it's actually a rate limit issue
         except:
             getLogger.info(
                 "Hit rate limit unexpectedly. Sleeping a full minute to reset."
@@ -150,48 +151,35 @@ def extract_plaid(
     creds,
     start_date,
     end_date,
-    endpoints,
+    endpoint,
 ):
     client = get_client(creds["client_id"], creds["client_secret"])
-    for account, config in endpoints.items():
-        access_token = creds[account]["access_token"]
-        transactions_fetcher = TransactionsFetcher(client, access_token)
-        transactions = transactions_fetcher.fetch(start_date, end_date)
+    access_token = creds[endpoint]["access_token"]
+    transactions_fetcher = TransactionsFetcher(client, access_token)
+    start_date, end_date = start_date.item(), end_date.item()
+    transactions = transactions_fetcher.fetch(start_date, end_date)
 
-        categorization_rules = lookup_yaml("transaction_categories.yml")
-        transaction_categorizer = TransactionCategorizer(categorization_rules)
-        tailored_categories = []
-        for transaction in transactions:
-            cat = transaction_categorizer.categorize(transaction)
-            tailored_categories.append(cat)
+    categorization_rules = lookup_yaml("transaction_categories.yml")
+    transaction_categorizer = TransactionCategorizer(categorization_rules)
+    tailored_categories = []
+    for transaction in transactions:
+        cat = transaction_categorizer.categorize(transaction)
+        tailored_categories.append(cat)
 
-        # Build dataframe
-        df = pd.DataFrame(transactions)
-        df["account"] = account
-        df["raw_category"] = df["category"]
-        df["category"] = tailored_categories
-        column_types = {
-            "transaction_id": "object",
-            "name": "object",
-            "date": "datetime64[ns]",
-            # "category_id": "int64",
-            "category": "object",
-            # "raw_category": "object",
-            # "personal_finance_category": "object",
-            "account": "object",
-            "merchant_name": "object",
-            "amount": "float64",
-        }
-        df = df.astype(dtype=column_types)[column_types.keys()]
+    # Build dataframe
+    df = pd.DataFrame(transactions)
+    df["account"] = endpoint
+    df["raw_category"] = df["category"]
+    df["category"] = tailored_categories
+    df = df.rename(columns={'transaction_id': 'id'})
 
-        # Outputs for debugging
-        getLogger.info(
-            f"{account} transaction extract for {start_date} till {end_date} complete"
-        )
-        getLogger.debug(
-            f"""{account} earliest and latest transaction dates: {df["date"].min()}, {df["date"].max()}"""
-        )
-        getLogger.debug(df.head())
-        getLogger.debug(df.info())
-        create_path_to_file_if_not_exists(config["output_path"])
-        df.to_csv(config["output_path"], index=False)
+    # Outputs for debugging
+    getLogger.info(
+        f"{endpoint} transaction extract for {start_date} till {end_date} complete"
+    )
+    getLogger.debug(
+        f"""{endpoint} earliest and latest transaction dates: {df["date"].min()}, {df["date"].max()}"""
+    )
+    getLogger.debug(df.head())
+    getLogger.debug(df.info())
+    return df

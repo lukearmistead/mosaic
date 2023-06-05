@@ -1,7 +1,7 @@
-import collections.abc
 import dateparser
 import inflection
 import logging
+import numpy as np
 import pandas as pd
 import os
 import yaml
@@ -22,17 +22,11 @@ def title_format(string):
 
 
 def convert_string_to_date(string):
-    return dateparser.parse(string).date()
+    return np.datetime64(dateparser.parse(string), 'D')
 
 
 def convert_vector_to_date(vector):
     return vector.map(convert_string_to_date)
-
-
-def create_path_to_file_if_not_exists(full_path):
-    directory_path = os.path.dirname(full_path)
-    if not os.path.exists(directory_path):
-        os.makedirs(directory_path)
 
 
 def date_dimension_table(start, end):

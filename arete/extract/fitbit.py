@@ -1,20 +1,14 @@
-from datetime import timedelta
 import logging as getLogger
 import fitbit
+import numpy as np
 import pandas as pd
-from arete.utils import create_path_to_file_if_not_exists
 
-"""
-- Create directories if they don't exist
-- Assign ids to data
-- Make OAuth2Server connection for Fitbit a touch more elegant
-- Config for Fitbit API endpoints
-- Place to actually store the data. Start with s3?
-- Chron to coordinate 
-- Backfilling
-"""
 
 getLogger.getLogger().setLevel(getLogger.DEBUG)
+
+
+def generate_deterministic_id_vector(df):
+    return df.astype(str).agg('_'.join, axis=1).map(hash)
 
 
 def unload_simple_json(data, d=None):
@@ -45,7 +39,12 @@ def unload_heart_rate_json(processed_fitbit_payload):
     return d
 
 
-def unload_fitbit_payload(raw_json_extract, resource, key):
+def hyphenate(endpoint):
+    return endpoint.replace("/", "-")
+
+
+def unload_fitbit_payload(raw_json_extract, resource):
+    key = hyphenate(resource)
     if resource == "sleep":
         unpack_dict = {
             "efficiency": [],
@@ -64,6 +63,9 @@ def unload_fitbit_payload(raw_json_extract, resource, key):
     return df
 
 
+def timedelta(days):
+    return np.timedelta64(days,'D')
+
 def hit_api(client, resource, start_date, end_date):
     days_requested = (end_date - start_date).days
     if days_requested > 100:
@@ -75,7 +77,7 @@ def extract_fitbit(
     creds,
     start_date,
     end_date,
-    endpoints,
+    endpoint,
 ):
     client = fitbit.Fitbit(
         client_id=creds["client_id"],
@@ -84,23 +86,23 @@ def extract_fitbit(
         refresh_token=creds["refresh_token"],
         expires_at=creds["expires_at"],
     )
-    for resource, config in endpoints.items():
-        key = resource.replace("/", "-")
-        getLogger.debug(resource)
-        working_start_date = start_date
-        working_end_date = min(working_start_date + timedelta(days=100), end_date)
-        dfs = []
-        more_data_to_extract = True
-        while more_data_to_extract:
-            getLogger.debug(working_start_date)
-            getLogger.debug(working_end_date)
-            raw_json_extract = client.time_series(
-                resource, base_date=working_start_date, end_date=working_end_date
-            )
-            df = unload_fitbit_payload(raw_json_extract, resource, key)
-            dfs.append(df)
-            more_data_to_extract = working_end_date < end_date
-            working_start_date = working_end_date + timedelta(days=1)
-            working_end_date = min((working_start_date + timedelta(days=100)), end_date)
-        create_path_to_file_if_not_exists(config["output_path"])
-        pd.concat(dfs, axis=0).to_csv(config["output_path"], index=False)
+    getLogger.debug(endpoint)
+    working_start_date = start_date
+    working_end_date = min(working_start_date + timedelta(days=100), end_date)
+    dfs = []
+    more_data_to_extract = True
+    while more_data_to_extract:
+        getLogger.debug(working_start_date)
+        getLogger.debug(working_end_date)
+        raw_json_extract = client.time_series(
+            endpoint, base_date=working_start_date.item(), end_date=working_end_date.item()
+        )
+        df = unload_fitbit_payload(raw_json_extract, endpoint)
+        df["id"] = generate_deterministic_id_vector(df)
+        dfs.append(df)
+        more_data_to_extract = working_end_date < end_date
+        working_start_date = working_end_date + timedelta(days=1)
+        working_end_date = min((working_start_date + timedelta(days=100)), end_date)
+    df = pd.concat(dfs, axis=0)
+    df = df.rename(columns={"dateTime": "date", "dateOfSleep": "date"})
+    return df

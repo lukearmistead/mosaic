@@ -5,7 +5,6 @@ from datetime import datetime
 from arete.utils import (
     convert_vector_to_date,
     snakecase_format,
-    create_path_to_file_if_not_exists,
 )
 
 
@@ -23,7 +22,7 @@ def mps_to_mph(meters_per_second):
 def transform_skis(start_date, end_date, extract_strava_path, output_path):
     df = pd.read_csv(extract_strava_path)
     getLogger.info(f"Read strava data from {extract_strava_path}:\n{df.head()}")
-    df["date"] = convert_vector_to_date(df["start_date_local"])
+    df["date"] = convert_vector_to_date(df["date"])
     df["total_elevation_gain"] = meters_to_feet(df["total_elevation_gain"])
     df["type"] = df["type"].apply(lambda x: snakecase_format(x))
     df["max_speed"] = mps_to_mph(df["max_speed"])
@@ -45,7 +44,6 @@ def transform_skis(start_date, end_date, extract_strava_path, output_path):
     getLogger.info(
         f"Outputting ski data between {start_date} and {end_date} to {output_path}:\n{df.head()}"
     )
-    create_path_to_file_if_not_exists(output_path)
     df.to_csv(output_path)
 
 

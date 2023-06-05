@@ -3,7 +3,7 @@ import logging as getLogger
 import pandas as pd
 import requests
 from splitwise import Splitwise
-from arete.utils import lookup_yaml, create_path_to_file_if_not_exists
+from arete.utils import lookup_yaml
 
 
 getLogger.getLogger().setLevel(getLogger.INFO)
@@ -27,7 +27,7 @@ def extract_splitwise(
     creds,
     start_date,
     end_date,
-    output_path,
+    endpoint, # For compatability with other extract steps coordinated by etl
 ):
     # https://splitwise.readthedocs.io/en/latest/user/authenticate.html#api-key
     client = Splitwise(
@@ -81,5 +81,4 @@ def extract_splitwise(
     df = pd.DataFrame(unpacked_expenses)
     getLogger.info(df.head())
     getLogger.info(df.info())
-    create_path_to_file_if_not_exists(output_path)
-    df.to_csv(output_path, index=False)
+    return df
