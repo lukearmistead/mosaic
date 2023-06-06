@@ -2,7 +2,6 @@ extract:
   # This step pulls raw data from each resource
   fitbit:
     start_date: '2021-10-01'
-    # start_date: '2023-05-01'
     end_date: 'today'
     endpoints:
       activities/heart:
@@ -52,7 +51,6 @@ extract:
     # Plaid's agreement with Capital One only permits downloading the last 90 days of authorization by the user
     # Further institution-specific limitations: https://dashboard.plaid.com/oauth-guide
     start_date: '2022-03-16'
-    # start_date: '2023-05-01'
     end_date: 'today'
     endpoints:
       # Barclaycard is actually a distinct entity from Barclays. Plaid doesn't enable access to the former.
@@ -98,7 +96,6 @@ extract:
         output_path: 'data/extract/plaid/barclays.csv'
   splitwise:
     start_date: '2022-11-01'
-    # start_date: '2023-05-01'
     end_date: 'today'
     endpoints:
       expenses:

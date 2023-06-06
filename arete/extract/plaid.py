@@ -168,6 +168,10 @@ def extract_plaid(
 
     # Build dataframe
     df = pd.DataFrame(transactions)
+    if df.empty:
+        getLogger.info(f"No transactions received. Returning blank dataframe")
+        return df
+
     df["account"] = endpoint
     df["raw_category"] = df["category"]
     df["category"] = tailored_categories
@@ -180,6 +184,4 @@ def extract_plaid(
     getLogger.debug(
         f"""{endpoint} earliest and latest transaction dates: {df["date"].min()}, {df["date"].max()}"""
     )
-    getLogger.debug(df.head())
-    getLogger.debug(df.info())
     return df

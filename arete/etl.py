@@ -143,19 +143,24 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
     for source, extract in zip(sources, extract_steps):
         creds = get_refreshed_creds(source, creds_file)
         source_config = config["extract"][source]
-        start_date, end_date = source_config["start_date"], source_config["end_date"]
         for endpoint, endpoint_config in source_config["endpoints"].items():
-            logging.info(f"Extracting {source} data from {endpoint} endpoint.")
+            start_date, end_date = source_config["start_date"], source_config["end_date"]
+            logging.info(f"Extracting from {source}, {endpoint}")
             schema = Schema(endpoint_config["output_schema"])
             output_file = OutputFile(endpoint_config["output_path"], schema)
             output_file.create_path()
             if output_file.exists():
+                logging.info(f"Output file found. Running incremental extract")
                 start_date = max(output_file.get_latest_row_date(), start_date)
-                incremental_df = extract(creds, start_date, end_date, endpoint)
-                df = dedup_combined_data(
-                    schema.conform(output_file.get_df()), schema.conform(incremental_df)
-                )
+                incremental_df = extract(creds, output_file.get_latest_row_date(), end_date, endpoint)
+                if not incremental_df.empty:
+                    df = dedup_combined_data(
+                        schema.conform(output_file.get_df()), schema.conform(incremental_df)
+                    )
+                elif incremental_df.empty:
+                    df = schema.conform(output_file.get_df())
             elif not output_file.exists():
+                logging.info(f"No output file found. Running full extract")
                 df = schema.conform(extract(creds, start_date, end_date, endpoint))
                 logging.info(f"Full extract fetched {len(df)} rows since {start_date}")
             df.to_csv(output_file.path, index=False)
