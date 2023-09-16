@@ -1,15 +1,15 @@
 import os, datetime, json
 import numpy as np
 import pandas as pd
-from arete.extract.plaid import extract_plaid
-from arete.extract.fitbit import extract_fitbit
-from arete.extract.splitwise import extract_splitwise
-from arete.extract.strava import extract_strava
-from arete.transform.skis import transform_skis
-from arete.transform.vitals import transform_vitals
-from arete.transform.transactions import transform_transactions
-from arete.utils import lookup_yaml, convert_string_to_date
-from arete.credentials import AccessTokenManager, CredsFile
+from mosaic.extract.plaid import extract_plaid
+from mosaic.extract.fitbit import extract_fitbit
+from mosaic.extract.splitwise import extract_splitwise
+from mosaic.extract.strava import extract_strava
+from mosaic.transform.skis import transform_skis
+from mosaic.transform.vitals import transform_vitals
+from mosaic.transform.transactions import transform_transactions
+from mosaic.utils import lookup_yaml, convert_string_to_date
+from mosaic.credentials import AccessTokenManager, CredsFile
 import logging
 
 
@@ -145,12 +145,12 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
         source_config = config["extract"][source]
         for endpoint, endpoint_config in source_config["endpoints"].items():
             start_date, end_date = source_config["start_date"], source_config["end_date"]
-            logging.info(f"Extracting from {source}, {endpoint}")
+            logging.info(f"Extracting {source}  {endpoint} between {start_date} and {end_date}.")
             schema = Schema(endpoint_config["output_schema"])
             output_file = OutputFile(endpoint_config["output_path"], schema)
             output_file.create_path()
             if output_file.exists():
-                logging.info(f"Output file found. Running incremental extract")
+                logging.info(f"Output file found. Running incremental extract.")
                 start_date = max(output_file.get_latest_row_date(), start_date)
                 incremental_df = extract(creds, output_file.get_latest_row_date(), end_date, endpoint)
                 if not incremental_df.empty:
@@ -160,7 +160,7 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
                 elif incremental_df.empty:
                     df = schema.conform(output_file.get_df())
             elif not output_file.exists():
-                logging.info(f"No output file found. Running full extract")
+                logging.info(f"No output file found. Running full extract.")
                 df = schema.conform(extract(creds, start_date, end_date, endpoint))
                 logging.info(f"Full extract fetched {len(df)} rows since {start_date}")
             df.to_csv(output_file.path, index=False)

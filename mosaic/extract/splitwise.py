@@ -3,7 +3,7 @@ import logging as getLogger
 import pandas as pd
 import requests
 from splitwise import Splitwise
-from arete.utils import lookup_yaml
+from mosaic.utils import lookup_yaml
 
 
 getLogger.getLogger().setLevel(getLogger.INFO)

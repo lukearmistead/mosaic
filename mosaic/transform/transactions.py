@@ -1,4 +1,4 @@
-from arete.utils import (
+from mosaic.utils import (
     convert_vector_to_date,
     convert_string_to_date,
 )
@@ -12,7 +12,7 @@ import os
 pd.options.display.max_rows = None
 pd.options.display.max_columns = None
 getLogger.getLogger().setLevel(getLogger.DEBUG)
-transform_dir = "arete/transform/"
+transform_dir = "mosaic/transform/"
 
 
 def read_plaid_transactions(endpoints):

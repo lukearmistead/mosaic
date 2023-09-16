@@ -1,6 +1,6 @@
 import logging as getLogger
 import pandas as pd
-from arete.utils import convert_vector_to_date
+from mosaic.utils import convert_vector_to_date
 
 
 def transform_fitbit_extract(input_path, date_col, value_col, value_name):

@@ -2,7 +2,7 @@ import inflection
 import logging as getLogger
 import pandas as pd
 from datetime import datetime
-from arete.utils import (
+from mosaic.utils import (
     convert_vector_to_date,
     snakecase_format,
 )

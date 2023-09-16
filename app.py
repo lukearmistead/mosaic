@@ -1,5 +1,5 @@
-from arete.etl import run_etl
-from arete.utils import convert_vector_to_date, lookup_yaml
+from mosaic.etl import run_etl
+from mosaic.utils import convert_vector_to_date, lookup_yaml
 import altair as alt
 import datetime
 import inflection

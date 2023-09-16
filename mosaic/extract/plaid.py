@@ -12,7 +12,7 @@ from plaid.model.item_public_token_exchange_request import (
 )
 from ratelimit import limits, sleep_and_retry
 import time
-from arete.utils import lookup_yaml
+from mosaic.utils import lookup_yaml
 
 
 pd.options.display.max_columns = None
