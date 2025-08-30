@@ -13,6 +13,9 @@ import webbrowser
 import yaml
 
 
+logging.basicConfig(level=logging.INFO)
+
+
 class FlaskServer:
     def __init__(self, oauth2_server, host="localhost", port=8000):
         self.oauth2_server = oauth2_server
@@ -26,9 +29,10 @@ class FlaskServer:
         @self.app.route("/callback")
         def callback():
             authorization_code = request.args.get("code")
+            print(authorization_code)
+            print('DOING STUFF=======================')
             response = self.oauth2_server.fetch_token(authorization_code)
             self.oauth2_server.save_token(response)
-
             shutdown_thread = Thread(target=self.srv.shutdown)
             shutdown_thread.start()
             return "Success!"
@@ -57,13 +61,26 @@ class OAuth2Server:
         self.response = None
 
     def fetch_token(self, authorization_code):
-        return self.server.fetch_token(
-            self.token_url,
-            client_id=self.client_id,
-            client_secret=self.client_secret,
-            code=authorization_code,
-            include_client_id=True,
-        )
+        if not authorization_code:
+            logging.error("No authorization code provided.")
+            return None
+
+        try:
+            token = self.server.fetch_token(
+                self.token_url,
+                client_id=self.client_id,
+                client_secret=self.client_secret,
+                code=authorization_code,
+                include_client_id=True,
+            )
+            logging.info("Token fetched successfully.")
+            return token
+
+        except Exception as e:
+            logging.error(f"Failed to fetch token: {e}")
+            logging.error(f"Request details: URL={self.token_url}, CLIENT_ID={self.client_id}, CLIENT_SECRET={self.client_secret}, CODE={authorization_code}")
+            return None
+
 
     def save_token(self, response):
         self.response = response
@@ -116,6 +133,7 @@ class AccessTokenManager:
     def refresh(self, creds_key):
         self.load_creds(creds_key)
         if "access_token" not in self.creds:
+            print("Failed to find access token")
             response = self.refresh_with_oauth2()
             self.update_token(response, creds_key)
         elif (
@@ -185,22 +203,27 @@ class AccessTokenManager:
 
 
 if __name__ == "__main__":
+
+    # logger = logging.getLogger('__name__')
+    # logger.setLevel(logging.INFO)
+
+    CREDS_PATH = "creds.yml"
+    creds_file = CredsFile(CREDS_PATH)
+
     # Creds tests
     print("STRAVA")
     CREDS_KEY = "strava"
-    CREDS_PATH = "creds.yml"
-    creds_file = CredsFile(CREDS_PATH)
     creds = AccessTokenManager(creds_file)
     creds.refresh(CREDS_KEY)
 
     print("FITBIT")
     CREDS_KEY = "fitbit"
-    CREDS_PATH = "creds.yml"
     creds = AccessTokenManager(creds_file)
     creds.refresh(CREDS_KEY)
 
     print("SPLITWISE")
     CREDS_KEY = "splitwise"
     CREDS_PATH = "creds.yml"
+    creds_file = CredsFile(CREDS_PATH)
     creds = AccessTokenManager(creds_file)
     creds.refresh(CREDS_KEY)

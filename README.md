@@ -30,8 +30,8 @@ Plaid's special "Link" authorization requires a bit more manual work.
 
 ## Ideas
 
-- [ ] Add a tutorial explaining the configuration of the `etl_config.yml`
-- [ ] Integrate with a secrets manager to avoid arduous setup after crash
-- [ ] Dockerize so that this can run on an arduino
-- [ ] Listen for new data from sources instead of pulling on a schedule
-    - [Strava](https://developers.strava.com/docs/webhookexample/)
+- [ ] Create general extract class instead of using API-specific libraries
+- [ ] Increase capabilities of etl.py
+    - [ ] Set ETL to yield instead of return in bulk
+    - [ ] Migrate data handling to etl.py module (saving as csv, etc)
+    - [ ] Make extracts incremental

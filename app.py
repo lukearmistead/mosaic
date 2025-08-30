@@ -9,7 +9,7 @@ import pandas as pd
 import streamlit as st
 
 
-getLogger.getLogger().setLevel(getLogger.INFO)
+getLogger.getLogger('__name__').setLevel(getLogger.INFO)
 
 
 def format_thousands(value):
@@ -53,7 +53,24 @@ def main():
     run_etl()
     st.title("🏔 Review")
     write_goal_checklist(["Tour Shasta", "Climb Serengeti", "Buy home"])
-    skiing, spending, health = st.tabs(["Skiing", "Spending", "Health"])
+    physical_therapy, skiing, spending, health = st.tabs(["PT", "Skiing", "Spending", "Health"])
+    with physical_therapy:
+        weekly_activities = (
+            spend.loc[spend["is_variable"], ["week", "category", "amount"]]
+            .groupby(["week", "category"], as_index=False)
+            .sum()
+        )
+        st.altair_chart(
+            alt.Chart(weekly_variable_spend)
+            .mark_bar()
+            .encode(
+                x=alt.X("week:T", scale=alt.Scale()),
+                y=alt.Y("amount:Q", scale=alt.Scale(zero=False)),
+                color="category:N",
+            ),
+            use_container_width=True,
+        )
+
     with skiing:
         ski = pd.read_csv(config["transform"]["skis"]["output_path"])
         metrics = st.columns(5)
@@ -182,4 +199,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_etl()
+    # main()

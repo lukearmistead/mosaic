@@ -49,16 +49,26 @@ class OutputFile:
 
     def get_latest_row_date(self, date_col="date"):
         df = self.get_df()
-        latest_row_date = np.datetime64(df[date_col].max().date())
-        return latest_row_date
+        if df[date_col].empty:
+            return None
+        elif not df[date_col].empty:
+            return np.datetime64(df[date_col].max().date())
 
 
 class Schema:
     def __init__(self, schema):
         self.schema = schema
+        self.columns = schema.keys()
+    
+    def _handle_empty(self, df):
+        if df.empty:
+            return pd.DataFrame(columns=self.columns)
+        else:
+            return df
 
     def conform(self, df):
-        return df.astype(dtype=self.schema)[self.schema.keys()]
+        df = self._handle_empty(df)
+        return df.astype(dtype=self.schema)[self.columns]
 
 
 class LastRun:
@@ -123,6 +133,9 @@ def dedup_combined_data(existing_df, incremental_df):
     )
     return df
 
+# output file exists
+# incremental extract
+# output file doesn't exist
 
 def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
     last_run = LastRun()
@@ -133,37 +146,39 @@ def run_etl(config_path=CONFIG_PATH, creds_path=CREDS_PATH):
 
     # Extracts
     convert_all_dates(config)
-    sources = [
-        "strava",
-        "fitbit",
-        "splitwise",
-        "plaid",
+    data_source_extracts = [
+        # ("strava", extract_strava),
+        # ("fitbit", extract_fitbit),
+        # ("splitwise", extract_splitwise),
+        ("plaid", extract_plaid),
     ]
-    extract_steps = [extract_strava, extract_fitbit, extract_splitwise, extract_plaid]
-    for source, extract in zip(sources, extract_steps):
+    for source, extract in data_source_extracts:
         creds = get_refreshed_creds(source, creds_file)
         source_config = config["extract"][source]
         for endpoint, endpoint_config in source_config["endpoints"].items():
             start_date, end_date = source_config["start_date"], source_config["end_date"]
-            logging.info(f"Extracting {source}  {endpoint} between {start_date} and {end_date}.")
+            logging.info(f"Extracting {source} {endpoint} between {start_date} and {end_date}.")
             schema = Schema(endpoint_config["output_schema"])
             output_file = OutputFile(endpoint_config["output_path"], schema)
             output_file.create_path()
-            if output_file.exists():
+            if not output_file.exists():
+                logging.info(f"No output file found. Running full extract.")
+                extract_df = schema.conform(extract(creds, start_date, end_date, endpoint))
+                logging.info(f"Full extract fetched {len(extract_df)} rows since {start_date}")
+            elif output_file.exists():
                 logging.info(f"Output file found. Running incremental extract.")
                 start_date = max(output_file.get_latest_row_date(), start_date)
                 incremental_df = extract(creds, output_file.get_latest_row_date(), end_date, endpoint)
+                incremental_df = schema.conform(incremental_df)
+                existing_df = schema.conform(output_file.get_df())
                 if not incremental_df.empty:
-                    df = dedup_combined_data(
-                        schema.conform(output_file.get_df()), schema.conform(incremental_df)
-                    )
+                    extract_df = dedup_combined_data(existing_df, incremental_df)
                 elif incremental_df.empty:
-                    df = schema.conform(output_file.get_df())
-            elif not output_file.exists():
-                logging.info(f"No output file found. Running full extract.")
-                df = schema.conform(extract(creds, start_date, end_date, endpoint))
-                logging.info(f"Full extract fetched {len(df)} rows since {start_date}")
-            df.to_csv(output_file.path, index=False)
+                    extract_df = existing_df
+            if not extract_df.empty:
+                extract_df.to_csv(output_file.path, index=False)
+            elif extract_df.empty:
+                logging.info(f"No data for {source} {endpoint} between {start_date} and {end_date}")
 
     # Transforms
     create_path_to_file_if_not_exists(config["transform"]["vitals"]["output_path"])
