@@ -11,7 +11,7 @@ pandasql
 prettytable
 plaid-python
 pyaml
-oauthlib==2.1.0
+oauthlib==4.0.0
 ratelimit
 requests-oauthlib==1.1.0
 seaborn
